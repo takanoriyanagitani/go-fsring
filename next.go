@@ -1,17 +1,36 @@
 package fsring
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
 )
 
+var ErrTooManyQueue = errors.New("too many queue already")
+
 type Next func(dirname string) (next string, e error)
 
 func NextBuilderConst(filename string) Next {
 	return func(dirname string) (next string, e error) {
 		return filepath.Join(dirname, filename), nil
+	}
+}
+
+func NextBuilder4heavy(ie IsEmpty) Next {
+	return func(dirname string) (next string, e error) {
+		for i := 0; i < 65536; i++ {
+			next = filepath.Join(dirname, fmt.Sprintf("%04x", i))
+			empty, e := ie(next)
+			if nil != e {
+				return "", e
+			}
+			if empty {
+				return next, nil
+			}
+		}
+		return "", ErrTooManyQueue
 	}
 }
 
