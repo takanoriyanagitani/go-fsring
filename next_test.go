@@ -68,7 +68,7 @@ func TestNext(t *testing.T) {
 		t.Run("NextBuilderNew", func(t *testing.T) {
 			t.Parallel()
 
-			var root string = filepath.Join(ITEST_FSRING_DIR, "NextBuilderNew")
+			var root string = filepath.Join(ITEST_FSRING_DIR, "Next/NextBuilderNew")
 
 			e := os.MkdirAll(root, 0755)
 			mustNil(e)
@@ -80,6 +80,37 @@ func TestNext(t *testing.T) {
 			nex, e := n(root)
 			mustNil(e)
 			t.Run("Must be same", check(nex, filepath.Join(root, "0")))
+		})
+
+		t.Run("FallbackIfNotEmpty", func(t *testing.T) {
+			t.Parallel()
+
+			var root string = filepath.Join(ITEST_FSRING_DIR, "Next/FallbackIfNotEmpty")
+
+			e := os.MkdirAll(root, 0755)
+			mustNil(e)
+
+			var chk NameChecker = NameCheckerNoCheck
+			var ie IsEmpty = IsEmptyBuilderNew(chk)
+
+			var mng string = "manage.txt"
+			var wrongNext string = filepath.Join(root, "0000")
+
+			e = os.WriteFile(filepath.Join(root, mng), []byte(wrongNext), 0755)
+			mustNil(e)
+
+			var n Next = NextBuilderNew(chk)(root)(mng).
+				FallbackIfNotEmpty(ie, NextBuilder4heavy(ie))
+
+			f, e := os.Create(wrongNext)
+			mustNil(e)
+			_, e = f.Write([]byte("not empty"))
+			mustNil(e)
+			f.Close()
+
+			nex, e := n(root)
+			mustNil(e)
+			t.Run("Must be same", check(nex, filepath.Join(root, "0001")))
 		})
 	})
 }
