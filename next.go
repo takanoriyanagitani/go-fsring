@@ -70,9 +70,9 @@ func NextBuilderNew(chk NameChecker) func(dirname string) func(managename string
 	}
 }
 
-type Next4 func(prev uint16) (next uint16, e error)
+type NextName4 func(prev uint16) (next uint16, e error)
 
-func (n Next4) ToNextName() NextName {
+func (n NextName4) ToNextName() NextName {
 	var nex NextName = ComposeErr(
 		Uint16parserHex, // basename string -> uint16, error
 		ComposeErr(
@@ -85,7 +85,7 @@ func (n Next4) ToNextName() NextName {
 	return nex.BasenameOnly()
 }
 
-var Next4default Next4 = func(prev uint16) (next uint16, e error) { return prev + 1, nil }
+var Next4default NextName4 = func(prev uint16) (next uint16, e error) { return prev + 1, nil }
 
 func newUintParser(base int, bitSize int) func(s string) (uint64, error) {
 	return func(s string) (uint64, error) {

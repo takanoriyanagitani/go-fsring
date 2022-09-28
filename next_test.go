@@ -16,7 +16,7 @@ func TestNext(t *testing.T) {
 		t.Run("zero", func(t *testing.T) {
 			t.Parallel()
 
-			var n Next4 = Next4default
+			var n NextName4 = Next4default
 
 			nex, e := n(0)
 			mustNil(e)
@@ -27,7 +27,7 @@ func TestNext(t *testing.T) {
 		t.Run("max", func(t *testing.T) {
 			t.Parallel()
 
-			var n Next4 = Next4default
+			var n NextName4 = Next4default
 
 			nex, e := n(65535)
 			mustNil(e)
