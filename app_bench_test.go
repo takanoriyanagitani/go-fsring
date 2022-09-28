@@ -2,10 +2,10 @@ package fsring
 
 import (
 	"io/fs"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"testing"
-	"math/rand"
 )
 
 func BenchmarkApp(b *testing.B) {
@@ -48,27 +48,27 @@ func BenchmarkApp(b *testing.B) {
 			wevth: eh,
 		}
 
-		rgen := func(b []byte){
+		rgen := func(b []byte) {
 			_, e := rand.Read(b)
 			mustNil(e)
 		}
 
-		b.Run("app got", func(a App) func(*testing.B){
-			return func(b *testing.B){
-				b.Run("empty", func(b *testing.B){
+		b.Run("app got", func(a App) func(*testing.B) {
+			return func(b *testing.B) {
+				b.Run("empty", func(b *testing.B) {
 					b.ResetTimer()
 
 					for i := 0; i < b.N; i++ {
-						e := a.HandleWriteRequest(WriteRequest{ data: nil })
+						e := a.HandleWriteRequest(WriteRequest{data: nil})
 						mustNil(e)
 					}
 				})
 
-				rbench := func(bsz int) func(*testing.B){
-					return func(b *testing.B){
+				rbench := func(bsz int) func(*testing.B) {
+					return func(b *testing.B) {
 						var buf []byte = make([]byte, bsz)
 						b.ResetTimer()
-						for i:=0; i<b.N; i++{
+						for i := 0; i < b.N; i++ {
 							rgen(buf)
 							e := a.HandleWriteRequest(WriteRequest{
 								data: buf,
