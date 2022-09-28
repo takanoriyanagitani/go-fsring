@@ -18,21 +18,26 @@ func NextBuilderConst(filename string) Next {
 	}
 }
 
-func NextBuilder4heavy(ie IsEmpty) Next {
-	return func(dirname string) (next string, e error) {
-		for i := 0; i < 65536; i++ {
-			next = filepath.Join(dirname, fmt.Sprintf("%04x", i))
-			empty, e := ie(next)
-			if nil != e {
-				return "", e
+func NextBuilderHeavyBuilderNewU[T uint8 | uint16](max int, format string) func(IsEmpty) Next {
+	return func(ie IsEmpty) Next {
+		return func(dirname string) (next string, e error) {
+			for i := 0; i < max; i++ {
+				next = filepath.Join(dirname, fmt.Sprintf(format, i))
+				empty, e := ie(next)
+				if nil != e {
+					return "", e
+				}
+				if empty {
+					return next, nil
+				}
 			}
-			if empty {
-				return next, nil
-			}
+			return "", ErrTooManyQueue
 		}
-		return "", ErrTooManyQueue
 	}
 }
+
+var NextBuilderHeavy3 func(IsEmpty) Next = NextBuilderHeavyBuilderNewU[uint8](256, "%02x")
+var NextBuilderHeavy4 func(IsEmpty) Next = NextBuilderHeavyBuilderNewU[uint8](65536, "%04x")
 
 type NextName func(prev string) (next string, e error)
 
@@ -89,22 +94,25 @@ func NextBuilderNew(chk NameChecker) func(dirname string) func(managename string
 	}
 }
 
-type NextName4 func(prev uint16) (next uint16, e error)
+type NextNameU[T uint8 | uint16] func(prev T) (next T, e error)
 
-func (n NextName4) ToNextName() NextName {
+func NextNameUdefault[T uint8 | uint16](prev T) (next T, e error) { return prev + 1, nil }
+
+func (n NextNameU[T]) ToNextName(sz int, format string) NextName {
 	var nex NextName = ComposeErr(
-		Uint16parserHex, // basename string -> uint16, error
+		uintParserHexBuilder[T](sz),
 		ComposeErr(
-			n, // uint16 -> uint16, err
-			func(next uint16) (string, error) {
-				return fmt.Sprintf("%04x", next), nil
+			n, // T -> T, err
+			func(next T) (string, error) {
+				return fmt.Sprintf(format, next), nil
 			},
 		),
 	)
 	return nex.BasenameOnly()
 }
 
-var Next4default NextName4 = func(prev uint16) (next uint16, e error) { return prev + 1, nil }
+var Next3default NextNameU[uint8] = NextNameUdefault[uint8]
+var Next4default NextNameU[uint16] = NextNameUdefault[uint16]
 
 func newUintParser(base int, bitSize int) func(s string) (uint64, error) {
 	return func(s string) (uint64, error) {
@@ -112,9 +120,12 @@ func newUintParser(base int, bitSize int) func(s string) (uint64, error) {
 	}
 }
 
-var Uint16parserHex func(s string) (uint16, error) = ComposeErr(
-	newUintParser(16, 16),
-	func(u uint64) (uint16, error) { return uint16(u), nil },
-)
+func uintParserHexBuilder[T uint8 | uint16](bitsz int) func(s string) (T, error) {
+	return ComposeErr(
+		newUintParser(16, bitsz),
+		func(u uint64) (T, error) { return T(u), nil },
+	)
+}
 
-var NextNameDefault4 NextName = Next4default.ToNextName()
+var NextNameDefault4 NextName = Next4default.ToNextName(16, "%04x")
+var NextNameDefault3 NextName = Next3default.ToNextName(8, "%02x")

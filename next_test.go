@@ -10,32 +10,6 @@ import (
 func TestNext(t *testing.T) {
 	t.Parallel()
 
-	t.Run("Next4default", func(t *testing.T) {
-		t.Parallel()
-
-		t.Run("zero", func(t *testing.T) {
-			t.Parallel()
-
-			var n NextName4 = Next4default
-
-			nex, e := n(0)
-			mustNil(e)
-
-			t.Run("Must be same", check(nex, 1))
-		})
-
-		t.Run("max", func(t *testing.T) {
-			t.Parallel()
-
-			var n NextName4 = Next4default
-
-			nex, e := n(65535)
-			mustNil(e)
-
-			t.Run("Must be same", check(nex, 0))
-		})
-	})
-
 	t.Run("NextNameDefault4", func(t *testing.T) {
 		t.Parallel()
 
@@ -54,7 +28,26 @@ func TestNext(t *testing.T) {
 			mustNil(e)
 			t.Run("Must be same", check(nex, "0000"))
 		})
+	})
 
+	t.Run("NextNameDefault3", func(t *testing.T) {
+		t.Parallel()
+
+		var n NextName = NextNameDefault3
+
+		t.Run("zero", func(t *testing.T) {
+			t.Parallel()
+			nex, e := n("00")
+			mustNil(e)
+			t.Run("Must be same", check(nex, "01"))
+		})
+
+		t.Run("max", func(t *testing.T) {
+			t.Parallel()
+			nex, e := n("ff")
+			mustNil(e)
+			t.Run("Must be same", check(nex, "00"))
+		})
 	})
 
 	t.Run("filesystem test", func(t *testing.T) {
@@ -100,7 +93,7 @@ func TestNext(t *testing.T) {
 			mustNil(e)
 
 			var n Next = NextBuilderNew(chk)(root)(mng).
-				FallbackIfNotEmpty(ie, NextBuilder4heavy(ie))
+				FallbackIfNotEmpty(ie, NextBuilderHeavy4(ie))
 
 			f, e := os.Create(wrongNext)
 			mustNil(e)
