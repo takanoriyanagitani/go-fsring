@@ -61,3 +61,19 @@ func (b WroteEventHandlerBuilderUint[T]) Write(evt WroteEvent) error {
 }
 
 func (b WroteEventHandlerBuilderUint[T]) NewHandler() WroteEventHandler { return b.Write }
+
+func WroteEventHandlerBuilderUintNew[T uint8 | uint16](
+	h2u hex2uint[T],
+	mng RingMangerUint[T],
+) (WroteEventHandlerBuilderUint[T], error) {
+	return ErrFromBool(
+		nil != h2u,
+		func() WroteEventHandlerBuilderUint[T] {
+			return WroteEventHandlerBuilderUint[T]{
+				h2u,
+				mng,
+			}
+		},
+		func() error { return fmt.Errorf("Invalid arguments") },
+	)
+}
