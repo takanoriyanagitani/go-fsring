@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 type GetUint[T uint8 | uint16] func() (T, error)
@@ -150,10 +151,32 @@ func (f ManagerBuilderFactoryFs[T]) Build() (b ManagerBuilderFs[T], e error) {
 	)
 }
 
-type RingManagerBuilderFs[T uint8 | uint16] struct {
-	head ManagerBuilderFs[T]
-	tail ManagerBuilderFs[T]
+type ManagerUint[T uint8 | uint16] struct {
+	get GetUint[T]
+	set SetUint[T]
 }
 
-func (r RingManagerBuilderFs[T]) BuildHead() (GetUint[T], SetUint[T]) { return r.head.Build() }
-func (r RingManagerBuilderFs[T]) BuildTail() (GetUint[T], SetUint[T]) { return r.tail.Build() }
+type RingMangerUint[T uint8 | uint16] struct {
+	head ManagerUint[T]
+	tail ManagerUint[T]
+	dir  string
+}
+
+func (r RingMangerUint[T]) next() (T, error) {
+	return ComposeErr(
+		func(m ManagerUint[T]) (T, error) { return m.get() },
+		func(t T) (T, error) { return t + 1, nil },
+	)(r.tail)
+}
+
+func (r RingMangerUint[T]) nextName(u2h uint2hex[T]) (string, error) {
+	return ComposeErr(
+		IgnoreArg[RingMangerUint[T]](r.next), // () => T, error
+		ErrFuncGen(u2h),                      // T -> string, error
+	)(r)
+}
+
+func (r RingMangerUint[T]) nextPath(u2h uint2hex[T]) (string, error) {
+	name, e := r.nextName(u2h)
+	return filepath.Join(r.dir, name), e
+}
