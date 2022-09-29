@@ -94,3 +94,22 @@ func (b WriteRequestHandlerBuilderUint[T]) Write(req WriteRequest) (WroteEvent, 
 }
 
 func (b WriteRequestHandlerBuilderUint[T]) NewHandler() WriteRequestHandler { return b.Write }
+
+func WriteRequestHandlerBuilderUintNew[T uint8 | uint16](
+	mng RingMangerUint[T],
+	wtr Write,
+	cnv uint2hex[T],
+) (WriteRequestHandlerBuilderUint[T], error) {
+	var valid bool = nil != wtr && nil != cnv
+	return ErrFromBool(
+		valid,
+		func() WriteRequestHandlerBuilderUint[T] {
+			return WriteRequestHandlerBuilderUint[T]{
+				mng,
+				wtr,
+				cnv,
+			}
+		},
+		func() error { return fmt.Errorf("Invalid arguments") },
+	)
+}
