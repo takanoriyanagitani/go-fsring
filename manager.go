@@ -180,3 +180,12 @@ func (r RingMangerUint[T]) nextPath(u2h uint2hex[T]) (string, error) {
 	name, e := r.nextName(u2h)
 	return filepath.Join(r.dir, name), e
 }
+
+func (r RingMangerUint[T]) updateTail(neo T) error { return r.tail.set(neo) }
+func (r RingMangerUint[T]) UpdateTail(h2u hex2uint[T], neo string) error {
+	var f func(string) (T, error) = ComposeErr(
+		h2u, // string -> T, error
+		func(t T) (T, error) { return t, r.updateTail(t) },
+	)
+	return ErrOnly(f)(neo)
+}

@@ -46,3 +46,18 @@ func WroteEventHandlerBuilderManaged(chk NameChecker) func(mname string) WroteEv
 		}
 	}
 }
+
+type WroteEventHandlerBuilderUint[T uint8 | uint16] struct {
+	h2u hex2uint[T]
+	mng RingMangerUint[T]
+}
+
+func (b WroteEventHandlerBuilderUint[T]) write(wroteName string) error {
+	return b.mng.UpdateTail(b.h2u, wroteName)
+}
+
+func (b WroteEventHandlerBuilderUint[T]) Write(evt WroteEvent) error {
+	return b.write(evt.wroteName)
+}
+
+func (b WroteEventHandlerBuilderUint[T]) NewHandler() WroteEventHandler { return b.Write }
