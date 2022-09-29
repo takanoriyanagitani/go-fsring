@@ -17,7 +17,7 @@ func IterFromArr[T any](a []T) Iter[T] {
 		if ix < len(a) {
 			t = a[ix]
 			ix += 1
-			return t, OptHasValue
+			return OptNew(t)
 		}
 		return t, OptEmpty
 	}
@@ -82,7 +82,7 @@ func IterInts(lbi, ube int) Iter[int] {
 		if ix < ube {
 			var nx int = ix
 			ix += 1
-			return nx, OptHasValue
+			return OptNew(nx)
 		}
 		return -1, OptEmpty
 	}

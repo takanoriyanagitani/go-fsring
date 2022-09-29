@@ -127,5 +127,8 @@ func uintParserHexBuilder[T uint8 | uint16](bitsz int) func(s string) (T, error)
 	)
 }
 
+var hex2uint3 func(string) (uint8, error) = uintParserHexBuilder[uint8](8)
+var hex2uint4 func(string) (uint16, error) = uintParserHexBuilder[uint16](16)
+
 var NextNameDefault4 NextName = Next4default.ToNextName(16, "%04x")
 var NextNameDefault3 NextName = Next3default.ToNextName(8, "%02x")
