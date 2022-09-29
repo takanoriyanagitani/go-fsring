@@ -56,3 +56,41 @@ func (m WriteRequestHandlerBuilder) Write2Next(data []byte) (ev WroteEvent, e er
 func (m WriteRequestHandlerBuilder) NewHandler() WriteRequestHandler {
 	return func(req WriteRequest) (evt WroteEvent, e error) { return m.Write2Next(req.data) }
 }
+
+type WriteRequestHandlerBuilderUint[T uint8 | uint16] struct {
+	mng RingMangerUint[T]
+	wtr Write
+	cnv uint2hex[T]
+}
+
+func (b WriteRequestHandlerBuilderUint[T]) nextPath() (string, error) {
+	return b.mng.nextPath(b.cnv)
+}
+
+func (b WriteRequestHandlerBuilderUint[T]) Write2Next(data []byte) (wroteName string, e error) {
+	var wdata func(string) func([]byte) (int, error) = CurryErr(b.wtr)
+	return ComposeErr(
+		func(m RingMangerUint[T]) (string, error) { return m.nextPath(b.cnv) },
+		func(name string) (string, error) {
+			return ComposeErr(
+				wdata(name), // []byte -> int, error
+				func(_ int) (string, error) { return name, nil },
+			)(data)
+		},
+	)(b.mng)
+}
+
+func (b WriteRequestHandlerBuilderUint[T]) Write(req WriteRequest) (WroteEvent, error) {
+	return ComposeErr(
+		b.Write2Next, // []byte -> string, error
+		func(wroteName string) (WroteEvent, error) {
+			var dir string = b.mng.dir
+			return WroteEvent{
+				dir,
+				wroteName,
+			}, nil
+		},
+	)(req.data)
+}
+
+func (b WriteRequestHandlerBuilderUint[T]) NewHandler() WriteRequestHandler { return b.Write }
