@@ -53,7 +53,7 @@ type WroteEventHandlerBuilderUint[T uint8 | uint16] struct {
 }
 
 func (b WroteEventHandlerBuilderUint[T]) write(wroteName string) error {
-	return b.mng.UpdateTail(b.h2u, wroteName)
+	return b.mng.UpdateTail(b.h2u, filepath.Base(wroteName))
 }
 
 func (b WroteEventHandlerBuilderUint[T]) Write(evt WroteEvent) error {

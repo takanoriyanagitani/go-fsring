@@ -57,4 +57,82 @@ func TestApp(t *testing.T) {
 		})
 		mustNil(e)
 	})
+
+	t.Run("Uint", func(t *testing.T) {
+		t.Parallel()
+
+		var wb WriteBuilder = WriteBuilder{}.Default()
+		w, e := wb.BuildNoRename()
+		mustNil(e)
+
+		t.Run("write got", func(wtr Write) func(*testing.T) {
+			return func(t *testing.T) {
+				t.Parallel()
+
+				t.Run("Uint8", func(t *testing.T) {
+					t.Parallel()
+
+					var root string = filepath.Join(ITEST_FSRING_DIR, "App/Uint/8")
+					e := os.MkdirAll(root, 0755)
+					mustNil(e)
+
+					var head string = "head.txt"
+					var tail string = "tail.txt"
+
+					var mbf ManagerBuilderFactoryFs[uint8] = ManagerBuilderFactoryFs[uint8]{}.
+						WithCheck(NameCheckerNoCheck).
+						WithGet(GetUintFsBuilderTxtHex3).
+						WithName(filepath.Join(root, head)).
+						WithSet(SetUintFsTxtHex3)
+					hb, e := mbf.Build()
+					mustNil(e)
+
+					tb, e := mbf.
+						WithName(filepath.Join(root, tail)).
+						Build()
+					mustNil(e)
+
+					noent := func() (uint8, error) { return 0, nil }
+
+					var mh ManagerUint[uint8] = hb.BuildManager().NoentIgnored(noent)
+					var mt ManagerUint[uint8] = tb.BuildManager().NoentIgnored(noent)
+
+					var rm RingMangerUint[uint8] = RingMangerUintNew(mh, mt, root)
+
+					rhb, e := WriteRequestHandlerBuilderUintNew(
+						rm,
+						wtr,
+						uint2hex3,
+					)
+					mustNil(e)
+
+					var wrh WriteRequestHandler = rhb.NewHandler()
+
+					wehb, e := WroteEventHandlerBuilderUintNew(
+						hex2uint3,
+						rm,
+					)
+					mustNil(e)
+
+					var weh WroteEventHandler = wehb.NewHandler()
+
+					app, e := AppNew(wrh, weh)
+					mustNil(e)
+
+					t.Run("app got", func(a App) func(*testing.T) {
+						return func(t *testing.T) {
+							t.Parallel()
+
+							t.Run("empty", func(t *testing.T) {
+								t.Parallel()
+
+								e := a.HandleWriteRequest(WriteRequestNew(nil))
+								mustNil(e)
+							})
+						}
+					}(app))
+				})
+			}
+		}(w))
+	})
 }

@@ -6,6 +6,8 @@ import (
 
 type WriteRequest struct{ data []byte }
 
+func WriteRequestNew(data []byte) WriteRequest { return WriteRequest{data} }
+
 type WriteRequestHandler func(WriteRequest) (WroteEvent, error)
 
 type WriteRequestHandlerBuilder struct {

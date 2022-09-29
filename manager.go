@@ -1,14 +1,43 @@
 package fsring
 
 import (
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 )
 
 type GetUint[T uint8 | uint16] func() (T, error)
 type SetUint[T uint8 | uint16] func(neo T) error
+
+func (g GetUint[T]) OrElse(f func(error) (T, error)) (T, error) {
+	t, e := g()
+	if nil != e {
+		return f(e)
+	}
+	return t, nil
+}
+
+func (g GetUint[T]) IgnoreNoent(f func() (T, error)) (T, error) {
+	t, e := g()
+	if nil != e {
+		ef := ErrIgnore(func(err error) bool { return errors.Is(err, fs.ErrNotExist) })
+		e = ef(e)
+		if nil != e {
+			return 0, e
+		}
+		return f()
+	}
+	return t, nil
+}
+
+func (g GetUint[T]) NoentIgnored(f func() (T, error)) GetUint[T] {
+	return func() (T, error) {
+		return g.IgnoreNoent(f)
+	}
+}
 
 type uint2hex[T uint8 | uint16] func(T) string
 
@@ -103,6 +132,14 @@ func (b ManagerBuilderFs[T]) Build() (GetUint[T], SetUint[T]) {
 	return g, s
 }
 
+func (b ManagerBuilderFs[T]) BuildManager() ManagerUint[T] {
+	get, set := b.Build()
+	return ManagerUint[T]{
+		get,
+		set,
+	}
+}
+
 type ManagerBuilderFactoryFs[T uint8 | uint16] struct {
 	GetUintFs[T]
 	SetUintFs[T]
@@ -156,10 +193,27 @@ type ManagerUint[T uint8 | uint16] struct {
 	set SetUint[T]
 }
 
+func (m ManagerUint[T]) NoentIgnored(f func() (T, error)) ManagerUint[T] {
+	m.get = m.get.NoentIgnored(f)
+	return m
+}
+
 type RingMangerUint[T uint8 | uint16] struct {
 	head ManagerUint[T]
 	tail ManagerUint[T]
 	dir  string
+}
+
+func RingMangerUintNew[T uint8 | uint16](
+	head ManagerUint[T],
+	tail ManagerUint[T],
+	dir string,
+) RingMangerUint[T] {
+	return RingMangerUint[T]{
+		head,
+		tail,
+		dir,
+	}
 }
 
 func (r RingMangerUint[T]) next() (T, error) {
