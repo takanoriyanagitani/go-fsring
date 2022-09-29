@@ -9,6 +9,11 @@ import (
 type GetUint[T uint8 | uint16] func() (T, error)
 type SetUint[T uint8 | uint16] func(neo T) error
 
+type uint2hex[T uint8 | uint16] func(T) string
+
+var uint2hex3 uint2hex[uint8] = uint2hexBuilder[uint8]("%02x")
+var uint2hex4 uint2hex[uint16] = uint2hexBuilder[uint16]("%04x")
+
 func getUintNewTxt[T uint8 | uint16](conv func(string) (T, error)) func(string) GetUint[T] {
 	return func(s string) GetUint[T] {
 		return func() (T, error) {
@@ -44,9 +49,6 @@ var GetUintFsBuilderTxtHex4 GetUintFs[uint16] = GetUintFsBuilderTxt(getUintNewTx
 func uint2hexBuilder[T uint8 | uint16](format string) func(T) string {
 	return func(t T) string { return fmt.Sprintf(format, t) }
 }
-
-var uint2hex3 func(uint8) string = uint2hexBuilder[uint8]("%02x")
-var uint2hex4 func(uint16) string = uint2hexBuilder[uint16]("%04x")
 
 func setUintWriteNew[T uint8 | uint16](conv func(T) string) func(io.Writer) SetUint[T] {
 	return func(w io.Writer) SetUint[T] {
@@ -86,3 +88,72 @@ func SetUintFsBuilder[T uint8 | uint16](w2s func(io.Writer) SetUint[T]) SetUintF
 
 var SetUintFsTxtHex3 SetUintFs[uint8] = SetUintFsBuilder(setUintWriterTxtHex3)
 var SetUintFsTxtHex4 SetUintFs[uint16] = SetUintFsBuilder(setUintWriterTxtHex4)
+
+type ManagerBuilderFs[T uint8 | uint16] struct {
+	get GetUintFs[T]
+	set SetUintFs[T]
+	chk NameChecker
+	nam string
+}
+
+func (b ManagerBuilderFs[T]) Build() (GetUint[T], SetUint[T]) {
+	g := b.get(b.chk)(b.nam)
+	s := b.set(b.chk)(b.nam)
+	return g, s
+}
+
+type ManagerBuilderFactoryFs[T uint8 | uint16] struct {
+	GetUintFs[T]
+	SetUintFs[T]
+	NameChecker
+	Filename string
+}
+
+func (f ManagerBuilderFactoryFs[T]) WithGet(g GetUintFs[T]) ManagerBuilderFactoryFs[T] {
+	f.GetUintFs = g
+	return f
+}
+
+func (f ManagerBuilderFactoryFs[T]) WithSet(s SetUintFs[T]) ManagerBuilderFactoryFs[T] {
+	f.SetUintFs = s
+	return f
+}
+
+func (f ManagerBuilderFactoryFs[T]) WithCheck(chk NameChecker) ManagerBuilderFactoryFs[T] {
+	f.NameChecker = chk
+	return f
+}
+
+func (f ManagerBuilderFactoryFs[T]) WithName(name string) ManagerBuilderFactoryFs[T] {
+	f.Filename = name
+	return f
+}
+
+func (f ManagerBuilderFactoryFs[T]) Build() (b ManagerBuilderFs[T], e error) {
+	var valid bool = IterFromArr([]bool{
+		nil != f.GetUintFs,
+		nil != f.SetUintFs,
+		nil != f.NameChecker,
+		0 < len(f.Filename),
+	}).All(Identity[bool])
+	return ErrFromBool(
+		valid,
+		func() ManagerBuilderFs[T] {
+			return ManagerBuilderFs[T]{
+				get: f.GetUintFs,
+				set: f.SetUintFs,
+				chk: f.NameChecker,
+				nam: f.Filename,
+			}
+		},
+		func() error { return fmt.Errorf("Invalid factory") },
+	)
+}
+
+type RingManagerBuilderFs[T uint8 | uint16] struct {
+	head ManagerBuilderFs[T]
+	tail ManagerBuilderFs[T]
+}
+
+func (r RingManagerBuilderFs[T]) BuildHead() (GetUint[T], SetUint[T]) { return r.head.Build() }
+func (r RingManagerBuilderFs[T]) BuildTail() (GetUint[T], SetUint[T]) { return r.tail.Build() }
