@@ -79,8 +79,11 @@ func TestApp(t *testing.T) {
 					var head string = "head.txt"
 					var tail string = "tail.txt"
 
+					var chk NameChecker = NameCheckerNoCheck
+					var emp IsEmpty = IsEmptyBuilderNew(chk)
+
 					var mbf ManagerBuilderFactoryFs[uint8] = ManagerBuilderFactoryFs[uint8]{}.
-						WithCheck(NameCheckerNoCheck).
+						WithCheck(chk).
 						WithGet(GetUintFsBuilderTxtHex3).
 						WithName(filepath.Join(root, head)).
 						WithSet(SetUintFsTxtHex3)
@@ -101,7 +104,7 @@ func TestApp(t *testing.T) {
 
 					rhb, e := WriteRequestHandlerBuilderUintNew(
 						rm,
-						wtr,
+						wtr.RejectNonEmpty(emp),
 						uint2hex3,
 					)
 					mustNil(e)

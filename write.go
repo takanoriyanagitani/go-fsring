@@ -9,6 +9,26 @@ import (
 
 type Write func(filename string, data []byte) (wrote int, e error)
 
+func (w Write) RejectNonEmpty(ie IsEmpty) Write {
+	return func(mayBeNonEmpty string, data []byte) (int, error) {
+		var wtr func([]byte) (int, error) = CurryErr(w)(mayBeNonEmpty)
+		var name2dat func(string) ([]byte, error) = ComposeErr(
+			ie, // string -> empty bool, e error
+			func(empty bool) ([]byte, error) {
+				return ErrFromBool(
+					empty,
+					func() []byte { return data },
+					func() error { return fmt.Errorf("Must not overwrite") },
+				)
+			},
+		)
+		return ComposeErr(
+			name2dat,
+			wtr,
+		)(mayBeNonEmpty)
+	}
+}
+
 type NameChecker func(unchecked string) (checked string)
 
 func (chk NameChecker) NewFileCreate(mode fs.FileMode) func(filename string) (*os.File, error) {
