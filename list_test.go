@@ -120,7 +120,7 @@ func TestList(t *testing.T) {
 					t.Run("Uint8", func(t *testing.T) {
 						t.Parallel()
 
-						var root string = filepath.Join(ITEST_FSRING_DIR, "App/Uint/8")
+						var root string = filepath.Join(ITEST_FSRING_DIR, "List/Uint8")
 						e := os.MkdirAll(root, 0755)
 						mustNil(e)
 
@@ -166,9 +166,8 @@ func TestList(t *testing.T) {
 									names, e := l()
 									mustNil(e)
 
-									add := func(a, b uint8) uint8 { return a + b }
-									var sum uint8 = names.Reduce(0, add)
-									t.Run("Must same", check(sum, 0))
+									var cnt int = names.Count()
+									t.Run("Must same", check(cnt, 1))
 								})
 							}
 						}(rm))
