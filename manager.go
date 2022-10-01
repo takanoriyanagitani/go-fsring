@@ -256,7 +256,7 @@ func (r RingMangerUint[T]) Tail() (T, error) {
 	return t.Get()
 }
 
-func (r RingMangerUint[T]) Count(counter HeadTailCounter[T]) (T, error) {
+func (r RingMangerUint[T]) count(counter HeadTailCounter[T]) (T, error) {
 	h2ht := func(head T) (ht [2]T, e error) {
 		tail, e := r.Tail()
 		ht[0] = head
@@ -278,4 +278,29 @@ func (r RingMangerUint[T]) Count(counter HeadTailCounter[T]) (T, error) {
 		ErrFuncGen(ht2diff),
 	)
 	return r2diff(r)
+}
+
+func (r RingMangerUint[T]) count2names(cnt int) (names Iter[T], e error) {
+	var lbi2names func(lbi T) Iter[T] = Curry(count2listUint[T])(cnt)
+	return ComposeErr(
+		func(_ RingMangerUint[T]) (T, error) { return r.Head() },
+		ErrFuncGen(lbi2names),
+	)(r)
+}
+
+func (r RingMangerUint[T]) Names(counter HeadTailCounter[T]) (names Iter[T], e error) {
+	var counter2count func(HeadTailCounter[T]) (int, error) = ComposeErr(
+		r.count,
+		func(cnt T) (int, error) { return int(cnt) + 1, nil },
+	)
+	return ComposeErr(
+		counter2count,
+		r.count2names,
+	)(counter)
+}
+
+func (r RingMangerUint[T]) NewList(counter HeadTailCounter[T]) ListUint[T] {
+	return func() (names Iter[T], e error) {
+		return r.Names(counter)
+	}
 }
