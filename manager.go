@@ -198,6 +198,8 @@ func (m ManagerUint[T]) NoentIgnored(f func() (T, error)) ManagerUint[T] {
 	return m
 }
 
+func (m ManagerUint[T]) Get() (T, error) { return m.get() }
+
 type RingMangerUint[T uint8 | uint16] struct {
 	head ManagerUint[T]
 	tail ManagerUint[T]
@@ -242,4 +244,38 @@ func (r RingMangerUint[T]) UpdateTail(h2u hex2uint[T], neo string) error {
 		func(t T) (T, error) { return t, r.updateTail(t) },
 	)
 	return ErrOnly(f)(neo)
+}
+
+func (r RingMangerUint[T]) Head() (T, error) {
+	var h ManagerUint[T] = r.head
+	return h.Get()
+}
+
+func (r RingMangerUint[T]) Tail() (T, error) {
+	var t ManagerUint[T] = r.tail
+	return t.Get()
+}
+
+func (r RingMangerUint[T]) Count(counter HeadTailCounter[T]) (T, error) {
+	h2ht := func(head T) (ht [2]T, e error) {
+		tail, e := r.Tail()
+		ht[0] = head
+		ht[1] = tail
+		return
+	}
+	r2h := func(m RingMangerUint[T]) (T, error) { return m.Head() }
+	r2ht := ComposeErr(
+		r2h,
+		h2ht,
+	)
+	ht2diff := func(ht [2]T) (diff T) {
+		var head T = ht[0]
+		var tail T = ht[1]
+		return counter(tail, head)
+	}
+	r2diff := ComposeErr(
+		r2ht,
+		ErrFuncGen(ht2diff),
+	)
+	return r2diff(r)
 }
