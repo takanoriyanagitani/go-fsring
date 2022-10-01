@@ -167,7 +167,63 @@ func TestList(t *testing.T) {
 									mustNil(e)
 
 									var cnt int = names.Count()
-									t.Run("Must same", check(cnt, 1))
+									t.Run("Must same(count)", check(cnt, 1))
+
+									names, e = l()
+									mustNil(e)
+									add := func(a, b uint8) uint8 { return a + b }
+									var tot uint8 = names.Reduce(0, add)
+									t.Run("Must same(tot)", check(tot, 0))
+								})
+
+								t.Run("no borrow", func(t *testing.T) {
+									e := mng.UpdateHead(h2u, "00")
+									mustNil(e)
+
+									e = mng.UpdateTail(h2u, "29")
+									mustNil(e)
+
+									names, e := l()
+									mustNil(e)
+
+									var cnt int = names.Count()
+									t.Run("Must same(count)", check(cnt, 42))
+
+									names, e = l()
+									mustNil(e)
+
+									var na []uint8 = names.ToArray()
+									t.Run("len check", check(len(na), 42))
+
+									t.Run("1st item", check(na[0], 0))
+									t.Run("2nd item", check(na[1], 1))
+									t.Run("3rd item", check(na[2], 2))
+									t.Run("last item", check(na[41], 41))
+								})
+
+								t.Run("borrow", func(t *testing.T) {
+									e := mng.UpdateHead(h2u, "40")
+									mustNil(e)
+
+									e = mng.UpdateTail(h2u, "3f")
+									mustNil(e)
+
+									names, e := l()
+									mustNil(e)
+
+									var cnt int = names.Count()
+									t.Run("Must same(count)", check(cnt, 256))
+
+									names, e = l()
+									mustNil(e)
+
+									var na []uint8 = names.ToArray()
+									t.Run("len check", check(len(na), 256))
+
+									t.Run("1st item", check(na[0], 0x40))
+									t.Run("2nd item", check(na[1], 0x41))
+									t.Run("3rd item", check(na[2], 0x42))
+									t.Run("last item", check(na[255], 0x3f))
 								})
 							}
 						}(rm))
