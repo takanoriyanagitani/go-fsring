@@ -19,9 +19,7 @@ func (d DeleteUint[T]) ErrIgnored(ignoreMe error) DeleteUint[T] {
 	})
 }
 
-func (d DeleteUint[T]) NoentIgnored() DeleteUint[T] {
-	return d.ErrIgnored(fs.ErrNotExist)
-}
+func (d DeleteUint[T]) NoentIgnored() DeleteUint[T] { return d.ErrIgnored(fs.ErrNotExist) }
 
 func truncateBuilder(chk NameChecker) func(fullpath string) error {
 	return func(fullpath string) error {
@@ -46,7 +44,7 @@ var NameBuilderUint4 func(dirname string) NameBuilderUint[uint16] = NameBuilderU
 func DeleteUintBuilder[T uint8 | uint16](bld NameBuilderUint[T]) func(NameChecker) DeleteUint[T] {
 	return func(chk NameChecker) DeleteUint[T] {
 		var path2truncate func(fullpath string) error = truncateBuilder(chk)
-		f := ComposeErr(
+		var f func(t T) (string, error) = ComposeErr(
 			ErrFuncGen(bld), // T -> string, error
 			func(fullpath string) (string, error) { return "", path2truncate(fullpath) },
 		)
