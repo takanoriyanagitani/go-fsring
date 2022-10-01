@@ -67,3 +67,17 @@ func ErrIgnoreNew(e error) func(error) error {
 		return errors.Is(other, e)
 	})
 }
+
+func ErrIgnored[T any](f func(T) error, check func(error) (ignore bool)) func(T) error {
+	return func(t T) error {
+		e := f(t)
+		if nil != e {
+			var ignore bool = check(e)
+			if ignore {
+				return nil
+			}
+			return e
+		}
+		return nil
+	}
+}
