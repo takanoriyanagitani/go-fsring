@@ -1,6 +1,7 @@
 package fsring
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -77,6 +78,7 @@ func TestWrite(t *testing.T) {
 
 					_, e = wtr(name, []byte("ignore me"))
 					t.Run("Must fail", check(nil != e, true))
+					t.Run("Must same", check(errors.Is(e, ErrNonEmpty), true))
 				})
 			}
 		}(w.RejectNonEmpty(emp)))

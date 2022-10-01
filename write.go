@@ -1,14 +1,19 @@
 package fsring
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 )
 
+var ErrNonEmpty error = errors.New("write request to non-empty file rejected")
+
 type Write func(filename string, data []byte) (wrote int, e error)
 
+// RejectNonEmpty creates new Write which rejects writes to non-empty file.
+// Error must be ErrNonEmpty if the file was not empty.
 func (w Write) RejectNonEmpty(ie IsEmpty) Write {
 	return func(mayBeNonEmpty string, data []byte) (int, error) {
 		var wtr func([]byte) (int, error) = CurryErr(w)(mayBeNonEmpty)
@@ -18,7 +23,7 @@ func (w Write) RejectNonEmpty(ie IsEmpty) Write {
 				return ErrFromBool(
 					empty,
 					func() []byte { return data },
-					func() error { return fmt.Errorf("Must not overwrite") },
+					func() error { return ErrNonEmpty },
 				)
 			},
 		)
