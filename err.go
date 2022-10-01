@@ -81,3 +81,13 @@ func ErrIgnored[T any](f func(T) error, check func(error) (ignore bool)) func(T)
 		return nil
 	}
 }
+
+func ErrOrElseGen[T, U any](f func(T) (U, error), ef func(error) (U, error)) func(T) (U, error) {
+	return func(t T) (U, error) {
+		u, e := f(t)
+		if nil != e {
+			return ef(e)
+		}
+		return u, nil
+	}
+}
