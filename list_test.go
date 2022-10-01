@@ -1,6 +1,8 @@
 package fsring
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -94,6 +96,85 @@ func TestList(t *testing.T) {
 
 			var cnt uint8 = HeadTailCounter3(0, 1)
 			t.Run("Must be same", check(cnt, 255))
+		})
+	})
+
+	t.Run("ListUint", func(t *testing.T) {
+		t.Parallel()
+
+		var ITEST_FSRING_DIR string = os.Getenv("ITEST_FSRING_DIR")
+		if len(ITEST_FSRING_DIR) < 1 {
+			t.Skip("skipping tests using filesystem...")
+		}
+
+		t.Run("RingMangerUint", func(t *testing.T) {
+			t.Parallel()
+			var wb WriteBuilder = WriteBuilder{}.Default()
+			w, e := wb.BuildNoRename()
+			mustNil(e)
+
+			t.Run("write got", func(wtr Write) func(*testing.T) {
+				return func(t *testing.T) {
+					t.Parallel()
+
+					t.Run("Uint8", func(t *testing.T) {
+						t.Parallel()
+
+						var root string = filepath.Join(ITEST_FSRING_DIR, "App/Uint/8")
+						e := os.MkdirAll(root, 0755)
+						mustNil(e)
+
+						var head string = "head.txt"
+						var tail string = "tail.txt"
+
+						var mbf ManagerBuilderFactoryFs[uint8] = ManagerBuilderFactoryFs[uint8]{}.
+							WithCheck(NameCheckerNoCheck).
+							WithGet(GetUintFsBuilderTxtHex3).
+							WithName(filepath.Join(root, head)).
+							WithSet(SetUintFsTxtHex3)
+						hb, e := mbf.Build()
+						mustNil(e)
+
+						tb, e := mbf.
+							WithName(filepath.Join(root, tail)).
+							Build()
+						mustNil(e)
+
+						noent := func() (uint8, error) { return 0, nil }
+
+						var mh ManagerUint[uint8] = hb.BuildManager().NoentIgnored(noent)
+						var mt ManagerUint[uint8] = tb.BuildManager().NoentIgnored(noent)
+
+						var rm RingMangerUint[uint8] = RingMangerUintNew(mh, mt, root)
+
+						t.Run("manager got", func(mng RingMangerUint[uint8]) func(*testing.T) {
+							return func(t *testing.T) {
+								t.Parallel()
+
+								var counter HeadTailCounter[uint8] = HeadTailCounter3
+								var l ListUint[uint8] = mng.NewList(counter)
+
+								var h2u hex2uint[uint8] = hex2uint3
+
+								t.Run("minimum", func(t *testing.T) {
+									e := mng.UpdateHead(h2u, "00")
+									mustNil(e)
+
+									e = mng.UpdateTail(h2u, "00")
+									mustNil(e)
+
+									names, e := l()
+									mustNil(e)
+
+									add := func(a, b uint8) uint8 { return a + b }
+									var sum uint8 = names.Reduce(0, add)
+									t.Run("Must same", check(sum, 0))
+								})
+							}
+						}(rm))
+					})
+				}
+			}(w))
 		})
 	})
 }
