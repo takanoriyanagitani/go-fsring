@@ -17,6 +17,29 @@ func ReadRequestNew[T any](target T) ReadRequest[T] { return ReadRequest[T]{targ
 
 type ReadEvent struct{ data []byte }
 
+func (r ReadEvent) ToServiceEvent(e error) ServiceEvent {
+	return OptUnwrapOrElse(
+		func() (evt ServiceEvent, hasValue bool) {
+			return OptFromBool(
+				nil == e,
+				func() ServiceEvent {
+					return ServiceEventOk(r.data).
+						WithStatus(OptUnwrapOrElse(
+							func() (status ServiceStatus, hasValue bool) {
+								return OptFromBool(
+									0 < len(r.data),
+									func() ServiceStatus { return StatusOk },
+								)
+							},
+							func() ServiceStatus { return StatusNotFound },
+						)())
+				},
+			)
+		},
+		Partial(ServiceEventNg, e),
+	)()
+}
+
 func (evt ReadEvent) WriteTo(w io.Writer) (int64, error) {
 	return ComposeErr(
 		w.Write,

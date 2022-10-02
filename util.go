@@ -32,3 +32,5 @@ func SelectFunc[T, U any](f func(T) (U, error), g func(T) (U, error)) func(latte
 		return f
 	}
 }
+
+func Partial[T, U any](f func(T) U, t T) func() U { return func() U { return f(t) } }

@@ -1,6 +1,7 @@
 package fsring
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 )
@@ -14,6 +15,22 @@ type ListRequest struct{}
 type ListEvent[T any] struct{ basenames []T }
 
 type ListEventWriterTo[T any] func(io.Writer) func(ListEvent[T]) (int64, error)
+
+func (l ListEvent[T]) ToServiceEvent(e error, wtr ListEventWriterTo[T]) ServiceEvent {
+	return OptUnwrapOrElse(
+		func() (evt ServiceEvent, hasValue bool) {
+			return OptFromBool(
+				nil == e,
+				func() ServiceEvent {
+					var buf bytes.Buffer
+					_, e := wtr(&buf)(l)
+					return ServiceEventNew(buf.Bytes(), e)
+				},
+			)
+		},
+		Partial(ServiceEventNg, e),
+	)()
+}
 
 func bytes2writer(w io.Writer) func([]byte) (int64, error) {
 	return ComposeErr(

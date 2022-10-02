@@ -18,6 +18,15 @@ type RemovedEvent struct{}
 
 func (r RemovedEvent) WriteTo(_ io.Writer) (int64, error) { return 0, nil }
 
+func (r RemovedEvent) ToServiceEvent(e error) ServiceEvent {
+	return OptUnwrapOrElse(
+		func() (evt ServiceEvent, hasValue bool) {
+			return OptFromBool(nil == e, Partial(ServiceEventOk, nil))
+		},
+		Partial(ServiceEventNg, e),
+	)()
+}
+
 type DeleteHandler[T any] func(DeleteRequest[T]) (RemovedEvent, error)
 
 func (d DeleteUint[T]) errIgnored(check func(error) (ignore bool)) DeleteUint[T] {
