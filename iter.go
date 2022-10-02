@@ -6,7 +6,7 @@ func IterTryFold[T, U any](i Iter[T], init U, reducer func(state U, t T) (U, err
 	var state U = init
 	for o, hasValue := i(); hasValue; o, hasValue = i() {
 		var t T = o
-		var e error = nil
+		var e error
 		state, e = reducer(state, t)
 		if nil != e {
 			return state, e
