@@ -9,8 +9,24 @@ import (
 
 type DeleteUint[T uint8 | uint16] func(target T) error
 
+type DeleteRequest[T any] struct{ target T }
+
+func DeleteRequestNew[T any](target T) DeleteRequest[T] { return DeleteRequest[T]{target} }
+
+type RemovedEvent struct{}
+
+type DeleteHandler[T any] func(DeleteRequest[T]) (RemovedEvent, error)
+
 func (d DeleteUint[T]) errIgnored(check func(error) (ignore bool)) DeleteUint[T] {
 	return ErrIgnored(d, check)
+}
+
+func (d DeleteUint[T]) NewHandler() DeleteHandler[T] {
+	return func(req DeleteRequest[T]) (RemovedEvent, error) {
+		var tgt T = req.target
+		var e error = d(tgt)
+		return RemovedEvent{}, e
+	}
 }
 
 func (d DeleteUint[T]) ErrIgnored(ignoreMe error) DeleteUint[T] {

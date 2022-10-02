@@ -10,8 +10,26 @@ type Read func(filename string) (data []byte, e error)
 
 type ReadByUint[T uint8 | uint16] func(key T) (data []byte, e error)
 
+type ReadRequest[T any] struct{ target T }
+
+func ReadRequestNew[T any](target T) ReadRequest[T] { return ReadRequest[T]{target} }
+
+type ReadEvent struct{ data []byte }
+
+type ReadHandler[T any] func(ReadRequest[T]) (ReadEvent, error)
+
+func (r ReadEvent) Raw() []byte { return r.data }
+
 func (r ReadByUint[T]) orElse(ef func(error) ([]byte, error)) ReadByUint[T] {
 	return ErrOrElseGen(r, ef)
+}
+
+func (r ReadByUint[T]) NewHandler() ReadHandler[T] {
+	return func(req ReadRequest[T]) (ReadEvent, error) {
+		var tgt T = req.target
+		data, e := r(tgt)
+		return ReadEvent{data}, e
+	}
 }
 
 func (r ReadByUint[T]) ErrorIgnored(ignoreMe error) ReadByUint[T] {

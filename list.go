@@ -4,12 +4,32 @@ type List func(dirname string) (filenames []string, e error)
 
 type ListUint[T uint8 | uint16] func() (names Iter[T], e error)
 
+type ListRequest struct{}
+
+type ListEvent[T any] struct{ basenames []T }
+
+func (l ListEvent[T]) BaseNames() []T { return l.basenames }
+
+type ListRequestHandler[T any] func(ListRequest) (ListEvent[T], error)
+
 func (l ListUint[T]) Fallback(other ListUint[T]) ListUint[T] {
 	f := ErrFallback(
 		IgnoreArg[int](l),
 		IgnoreArg[int](other),
 	)
 	return func() (Iter[T], error) { return f(0) }
+}
+
+func (l ListUint[T]) NewHandler() ListRequestHandler[T] {
+	return func(_ ListRequest) (evt ListEvent[T], e error) {
+		return ComposeErr(
+			func(_ ListUint[T]) (names Iter[T], e error) { return l() },
+			func(names Iter[T]) (ListEvent[T], error) {
+				var basenames []T = names.ToArray()
+				return ListEvent[T]{basenames}, nil
+			},
+		)(l)
+	}
 }
 
 func ListUintFallbackNew[T uint8 | uint16](max int) ListUint[T] {
