@@ -2,13 +2,23 @@ package fsring
 
 type Iter[T any] func() (t T, hasValue bool)
 
-func IterReduce[T, U any](i Iter[T], init U, reducer func(state U, t T) U) U {
+func IterTryFold[T, U any](i Iter[T], init U, reducer func(state U, t T) (U, error)) (U, error) {
 	var state U = init
 	for o, hasValue := i(); hasValue; o, hasValue = i() {
 		var t T = o
-		state = reducer(state, t)
+		var e error = nil
+		state, e = reducer(state, t)
+		if nil != e {
+			return state, e
+		}
 	}
-	return state
+	return state, nil
+}
+
+func IterReduce[T, U any](i Iter[T], init U, reducer func(state U, t T) U) U {
+	r := func(state U, t T) (U, error) { return reducer(state, t), nil }
+	u, _ := IterTryFold(i, init, r)
+	return u
 }
 
 func IterFromArr[T any](a []T) Iter[T] {

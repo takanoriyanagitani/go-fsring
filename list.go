@@ -1,5 +1,10 @@
 package fsring
 
+import (
+	"fmt"
+	"io"
+)
+
 type List func(dirname string) (filenames []string, e error)
 
 type ListUint[T uint8 | uint16] func() (names Iter[T], e error)
@@ -7,6 +12,68 @@ type ListUint[T uint8 | uint16] func() (names Iter[T], e error)
 type ListRequest struct{}
 
 type ListEvent[T any] struct{ basenames []T }
+
+type ListEventWriterTo[T any] func(io.Writer) func(ListEvent[T]) (int64, error)
+
+func bytes2writer(w io.Writer) func([]byte) (int64, error) {
+	return ComposeErr(
+		w.Write, // []byte -> int, error
+		func(i int) (int64, error) { return int64(i), nil },
+	)
+}
+
+type Uint2Writer[T uint8 | uint16] func(io.Writer) func(T) (int64, error)
+
+func (u Uint2Writer[T]) NewEventWriter() ListEventWriterTo[T] {
+	return func(w io.Writer) func(ListEvent[T]) (int64, error) {
+		var t2wtr func(T) (int64, error) = u(w)
+		return func(evt ListEvent[T]) (int64, error) {
+			var names Iter[T] = IterFromArr(evt.basenames)
+			return IterTryFold(
+				names,
+				0,
+				func(state int64, item T) (int64, error) {
+					return ComposeErr(
+						t2wtr, // T -> int64, error
+						func(cnt int64) (int64, error) { return state + cnt, nil },
+					)(item)
+				},
+			)
+		}
+	}
+}
+
+func (u Uint2Writer[T]) WithSuffix(suffix []byte) Uint2Writer[T] {
+	return func(w io.Writer) func(T) (int64, error) {
+		return ComposeErr(
+			u(w), // T -> int64, error
+			func(c1 int64) (int64, error) {
+				return ComposeErr(
+					bytes2writer(w), // []byte -> int64, error
+					func(c2 int64) (int64, error) { return c1 + c2, nil },
+				)(suffix)
+			},
+		)
+	}
+}
+
+func Uint2WriterHexTxtNew[T uint8 | uint16](format string) Uint2Writer[T] {
+	writeUint := func(w io.Writer) func(T) (int, error) {
+		return func(u T) (int, error) {
+			return fmt.Fprintf(w, format, u)
+		}
+	}
+	return func(w io.Writer) func(T) (int64, error) {
+		var t2wtr func(T) (int, error) = writeUint(w)
+		return ComposeErr(
+			t2wtr,
+			func(i int) (int64, error) { return int64(i), nil },
+		)
+	}
+}
+
+var Uint2WriterHexTxt3 Uint2Writer[uint8] = Uint2WriterHexTxtNew[uint8]("%02x")
+var Uint2WriterHexTxt4 Uint2Writer[uint16] = Uint2WriterHexTxtNew[uint16]("%04x")
 
 func (l ListEvent[T]) BaseNames() []T { return l.basenames }
 

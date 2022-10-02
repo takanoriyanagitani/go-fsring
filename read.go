@@ -2,6 +2,7 @@ package fsring
 
 import (
 	"errors"
+	"io"
 	"io/fs"
 	"os"
 )
@@ -15,6 +16,13 @@ type ReadRequest[T any] struct{ target T }
 func ReadRequestNew[T any](target T) ReadRequest[T] { return ReadRequest[T]{target} }
 
 type ReadEvent struct{ data []byte }
+
+func (evt ReadEvent) WriteTo(w io.Writer) (int64, error) {
+	return ComposeErr(
+		w.Write,
+		func(i int) (int64, error) { return int64(i), nil },
+	)(evt.data)
+}
 
 type ReadHandler[T any] func(ReadRequest[T]) (ReadEvent, error)
 

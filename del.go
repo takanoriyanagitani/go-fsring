@@ -2,6 +2,7 @@ package fsring
 
 import (
 	"errors"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -14,6 +15,8 @@ type DeleteRequest[T any] struct{ target T }
 func DeleteRequestNew[T any](target T) DeleteRequest[T] { return DeleteRequest[T]{target} }
 
 type RemovedEvent struct{}
+
+func (r RemovedEvent) WriteTo(_ io.Writer) (int64, error) { return 0, nil }
 
 type DeleteHandler[T any] func(DeleteRequest[T]) (RemovedEvent, error)
 
