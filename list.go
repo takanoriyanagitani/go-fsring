@@ -4,6 +4,29 @@ type List func(dirname string) (filenames []string, e error)
 
 type ListUint[T uint8 | uint16] func() (names Iter[T], e error)
 
+func (l ListUint[T]) Fallback(other ListUint[T]) ListUint[T] {
+	f := ErrFallback(
+		IgnoreArg[int](l),
+		IgnoreArg[int](other),
+	)
+	return func() (Iter[T], error) { return f(0) }
+}
+
+func ListUintFallbackNew[T uint8 | uint16](max int) ListUint[T] {
+	return func() (names Iter[T], e error) {
+		var u T = 0
+		var i Iter[int] = IterInts(0, max)
+		return IterMap(i, func(_ int) T {
+			var ret T = u
+			u += 1
+			return ret
+		}), nil
+	}
+}
+
+var ListUintFallbackNew3 ListUint[uint8] = ListUintFallbackNew[uint8](256)
+var ListUintFallbackNew4 ListUint[uint16] = ListUintFallbackNew[uint16](65536)
+
 func count2listUint[T uint8 | uint16](cnt int, lbi T) Iter[T] {
 	var i Iter[int] = IterInts(0, cnt)
 	var t T = lbi

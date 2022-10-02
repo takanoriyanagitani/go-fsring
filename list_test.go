@@ -232,4 +232,18 @@ func TestList(t *testing.T) {
 			}(w))
 		})
 	})
+
+	t.Run("ListUintFallback", func(t *testing.T) {
+		t.Parallel()
+
+		t.Run("uint8", func(t *testing.T) {
+			t.Parallel()
+
+			var lu ListUint[uint8] = ListUintFallbackNew3
+			names, e := lu()
+			mustNil(e)
+			var cnt int = names.Count()
+			t.Run("Must be same", check(cnt, 256))
+		})
+	})
 }

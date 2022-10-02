@@ -91,3 +91,13 @@ func ErrOrElseGen[T, U any](f func(T) (U, error), ef func(error) (U, error)) fun
 		return u, nil
 	}
 }
+
+func ErrFallback[T, U any](f func(T) (U, error), g func(T) (U, error)) func(T) (U, error) {
+	return func(t T) (U, error) {
+		u, e := f(t)
+		if nil != e {
+			return g(t)
+		}
+		return u, e
+	}
+}
