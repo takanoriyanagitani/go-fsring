@@ -28,3 +28,17 @@ func mustNil(e error) {
 		panic(e)
 	}
 }
+
+func TestAll(t *testing.T) {
+	t.Parallel()
+
+	t.Run("RingServiceFactory", func(t *testing.T) {
+		t.Parallel()
+
+		t.Run("invalid factory", func(t *testing.T) {
+			f := RingServiceFactory[uint8]{}
+			_, e := f.Build()
+			t.Run("Must fail", check(nil != e, true))
+		})
+	})
+}

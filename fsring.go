@@ -28,6 +28,10 @@ type ServiceEvent struct {
 	status ServiceStatus
 }
 
+func (s ServiceEvent) Body() []byte          { return s.body }
+func (s ServiceEvent) Err() error            { return s.stat }
+func (s ServiceEvent) Status() ServiceStatus { return s.status }
+
 func (s ServiceEvent) WithBody(b []byte) ServiceEvent {
 	s.body = b
 	return s
@@ -73,6 +77,31 @@ type RingServiceFactory[T any] struct {
 	ListRequestHandler[T]
 	DeleteHandler[T]
 	ReadHandler[T]
+}
+
+func (f RingServiceFactory[T]) WithWriteHandler(h WriteRequestHandler) RingServiceFactory[T] {
+	f.WriteRequestHandler = h
+	return f
+}
+
+func (f RingServiceFactory[T]) WithWroteHandler(h WroteEventHandler) RingServiceFactory[T] {
+	f.WroteEventHandler = h
+	return f
+}
+
+func (f RingServiceFactory[T]) WithListHandler(h ListRequestHandler[T]) RingServiceFactory[T] {
+	f.ListRequestHandler = h
+	return f
+}
+
+func (f RingServiceFactory[T]) WithDeleteHandler(h DeleteHandler[T]) RingServiceFactory[T] {
+	f.DeleteHandler = h
+	return f
+}
+
+func (f RingServiceFactory[T]) WithReadHandler(h ReadHandler[T]) RingServiceFactory[T] {
+	f.ReadHandler = h
+	return f
 }
 
 func (f RingServiceFactory[T]) Build() (RingService[T], error) {
