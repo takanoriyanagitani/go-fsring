@@ -3,7 +3,6 @@ package fsring
 import (
 	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -16,8 +15,6 @@ type DeleteRequest[T any] struct{ target T }
 func DeleteRequestNew[T any](target T) DeleteRequest[T] { return DeleteRequest[T]{target} }
 
 type RemovedEvent[T any] struct{ target T }
-
-func (r RemovedEvent[T]) WriteTo(_ io.Writer) (int64, error) { return 0, nil }
 
 func (r RemovedEvent[T]) ToServiceEvent(e error) ServiceEvent {
 	return OptUnwrapOrElse(
@@ -62,6 +59,18 @@ func RemovedEventHandlerBuilderUintNew[T uint8 | uint16](
 		func() error { return fmt.Errorf("Invalid arguments") },
 	)
 }
+
+var RemovedEventHandlerBuilderUint3New func(
+	RingManagerUint[uint8],
+) (RemovedEventHandlerBuilderUint[uint8], error) = CurryErrIII(
+	RemovedEventHandlerBuilderUintNew[uint8],
+)(hex2uint3)(uint2hex3)
+
+var RemovedEventHandlerBuilderUint4New func(
+	RingManagerUint[uint16],
+) (RemovedEventHandlerBuilderUint[uint16], error) = CurryErrIII(
+	RemovedEventHandlerBuilderUintNew[uint16],
+)(hex2uint4)(uint2hex4)
 
 type DeleteHandler[T any] func(DeleteRequest[T]) (RemovedEvent[T], error)
 

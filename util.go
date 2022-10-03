@@ -34,3 +34,12 @@ func SelectFunc[T, U any](f func(T) (U, error), g func(T) (U, error)) func(latte
 }
 
 func Partial[T, U any](f func(T) U, t T) func() U { return func() U { return f(t) } }
+
+func CurryErrIII[T, U, V, W any](f func(T, U, V) (W, error)) func(T) func(U) func(V) (W, error) {
+	return func(t T) func(U) func(V) (W, error) {
+		g := func(u U, v V) (W, error) {
+			return f(t, u, v)
+		}
+		return CurryErr(g)
+	}
+}
