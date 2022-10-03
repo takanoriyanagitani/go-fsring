@@ -103,6 +103,11 @@ func (b WriteBuilder) Default() WriteBuilder {
 	return b
 }
 
+func (b WriteBuilder) WithFileSync(s FileSync) WriteBuilder {
+	b.FileSync = s
+	return b
+}
+
 func (b WriteBuilder) BuildNoRename() (Write, error) {
 	var valid bool = IterFromArr([]bool{
 		nil != b.NameChecker,

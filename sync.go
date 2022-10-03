@@ -2,12 +2,19 @@ package fsring
 
 import (
 	"os"
+	"syscall"
 )
 
 type FileSync func(f *os.File) error
 type DirSync func(dir *os.File) error
 
 var FileSyncAll FileSync = func(f *os.File) error { return f.Sync() }
+var FileSyncData FileSync = func(f *os.File) error {
+	return Compose(
+		func(u uintptr) int { return int(u) },
+		syscall.Fdatasync, // int -> error
+	)(f.Fd())
+}
 
 var DirSyncDefault DirSync = func(f *os.File) error { return f.Sync() }
 

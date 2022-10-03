@@ -25,11 +25,11 @@ func (r ReadEvent) ToServiceEvent(e error) ServiceEvent {
 			return OptFromBool(
 				nil == e,
 				func() ServiceEvent {
-					return ServiceEventOk(r.data).
+					return ServiceEventOk(r.Raw()).
 						WithStatus(OptUnwrapOrElse(
 							func() (status ServiceStatus, hasValue bool) {
 								return OptFromBool(
-									0 < len(r.data),
+									0 < len(r.Raw()),
 									func() ServiceStatus { return StatusOk },
 								)
 							},
@@ -59,7 +59,7 @@ func (r ReadByUint[T]) orElse(ef func(error) ([]byte, error)) ReadByUint[T] {
 
 func (r ReadByUint[T]) NewHandler() ReadHandler[T] {
 	return func(req ReadRequest[T]) (ReadEvent, error) {
-		var tgt T = req.target
+		var tgt T = req.Target()
 		data, e := r(tgt)
 		return ReadEvent{data}, e
 	}

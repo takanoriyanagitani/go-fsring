@@ -30,6 +30,14 @@ func BenchmarkAll(b *testing.B) {
 		var hname string = filepath.Join(root, "head.txt")
 		var tname string = filepath.Join(root, "tail.txt")
 
+		e = os.MkdirAll(filepath.Dir(hname), 0755)
+		mustNil(e)
+
+		e = os.WriteFile(hname, nil, 0644)
+		mustNil(e)
+		e = os.WriteFile(tname, nil, 0644)
+		mustNil(e)
+
 		var mbf ManagerBuilderFactoryFs[uint8] = ManagerBuilderFactoryFs[uint8]{}.
 			WithGet(guf).
 			WithSet(suf).
@@ -42,12 +50,14 @@ func BenchmarkAll(b *testing.B) {
 
 		noent0 := func() (uint8, error) { return 0, nil }
 
-		var hmu ManagerUint[uint8] = hmbf.BuildManager().NoentIgnored(noent0)
-		var tmu ManagerUint[uint8] = tmbf.BuildManager().NoentIgnored(noent0)
+		var hmu ManagerUint[uint8] = hmbf.BuildManager().NoentIgnored(noent0).Fallback(0)
+		var tmu ManagerUint[uint8] = tmbf.BuildManager().NoentIgnored(noent0).Fallback(255)
 
 		var rmu RingManagerUint[uint8] = RingManagerUintNew(hmu, tmu, root)
 
-		var wb WriteBuilder = WriteBuilder{}.Default()
+		var wb WriteBuilder = WriteBuilder{}.
+			Default().
+			WithFileSync(FileSyncData)
 		wtr, e := wb.BuildNoRename()
 		mustNil(e)
 

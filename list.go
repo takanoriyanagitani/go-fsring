@@ -45,7 +45,7 @@ func (u Uint2Writer[T]) NewEventWriter() ListEventWriterTo[T] {
 	return func(w io.Writer) func(ListEvent[T]) (int64, error) {
 		var t2wtr func(T) (int64, error) = u(w)
 		return func(evt ListEvent[T]) (int64, error) {
-			var names Iter[T] = IterFromArr(evt.basenames)
+			var names Iter[T] = IterFromArr(evt.BaseNames())
 			return IterTryFold(
 				names,
 				0,

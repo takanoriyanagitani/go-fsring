@@ -39,6 +39,16 @@ func (g GetUint[T]) NoentIgnored(f func() (T, error)) GetUint[T] {
 	}
 }
 
+func (g GetUint[T]) Fallback(alt T) GetUint[T] {
+	return func() (T, error) {
+		t, e := g()
+		if nil != e {
+			return alt, nil
+		}
+		return t, nil
+	}
+}
+
 type uint2hex[T uint8 | uint16] func(T) string
 
 var uint2hex3 uint2hex[uint8] = uint2hexBuilder[uint8]("%02x")
@@ -107,13 +117,10 @@ func SetUintFsBuilder[T uint8 | uint16](w2s func(io.Writer) SetUint[T]) SetUintF
 					return e
 				}
 				defer func() {
-					_ = f.Close() // ignore close error after sync
+					_ = f.Close() // ignore close error(allow head/tail to be dirty)
 				}()
 				var su SetUint[T] = w2s(f)
-				return Err1st([]func() error{
-					func() error { return su(neo) },
-					func() error { return f.Sync() },
-				})
+				return su(neo)
 			}
 		}
 	}
@@ -198,6 +205,11 @@ type ManagerUint[T uint8 | uint16] struct {
 
 func (m ManagerUint[T]) NoentIgnored(f func() (T, error)) ManagerUint[T] {
 	m.get = m.get.NoentIgnored(f)
+	return m
+}
+
+func (m ManagerUint[T]) Fallback(alt T) ManagerUint[T] {
+	m.get = m.get.Fallback(alt)
 	return m
 }
 
