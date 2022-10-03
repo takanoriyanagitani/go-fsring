@@ -120,3 +120,18 @@ func (s RingService[T]) Get(req ReadRequest[T]) ServiceEvent {
 	r, e := s.rh(req)
 	return r.ToServiceEvent(e)
 }
+
+func (s RingService[T]) Handle(req interface{}, wtr ListEventWriterTo[T]) ServiceEvent {
+	switch q := req.(type) {
+	case ListRequest:
+		return s.List(q, wtr)
+	case WriteRequest:
+		return s.Write(q)
+	case DeleteRequest[T]:
+		return s.Del(q)
+	case ReadRequest[T]:
+		return s.Get(q)
+	default:
+		return ServiceEventNg(fmt.Errorf("Invalid request"))
+	}
+}
