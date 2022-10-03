@@ -49,7 +49,7 @@ func WroteEventHandlerBuilderManaged(chk NameChecker) func(mname string) WroteEv
 
 type WroteEventHandlerBuilderUint[T uint8 | uint16] struct {
 	h2u hex2uint[T]
-	mng RingMangerUint[T]
+	mng RingManagerUint[T]
 }
 
 func (b WroteEventHandlerBuilderUint[T]) write(wroteName string) error {
@@ -64,7 +64,7 @@ func (b WroteEventHandlerBuilderUint[T]) NewHandler() WroteEventHandler { return
 
 func WroteEventHandlerBuilderUintNew[T uint8 | uint16](
 	h2u hex2uint[T],
-	mng RingMangerUint[T],
+	mng RingManagerUint[T],
 ) (WroteEventHandlerBuilderUint[T], error) {
 	return ErrFromBool(
 		nil != h2u,

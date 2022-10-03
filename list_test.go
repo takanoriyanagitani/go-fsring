@@ -107,7 +107,7 @@ func TestList(t *testing.T) {
 			t.Skip("skipping tests using filesystem...")
 		}
 
-		t.Run("RingMangerUint", func(t *testing.T) {
+		t.Run("RingManagerUint", func(t *testing.T) {
 			t.Parallel()
 			var wb WriteBuilder = WriteBuilder{}.Default()
 			w, e := wb.BuildNoRename()
@@ -145,9 +145,9 @@ func TestList(t *testing.T) {
 						var mh ManagerUint[uint8] = hb.BuildManager().NoentIgnored(noent)
 						var mt ManagerUint[uint8] = tb.BuildManager().NoentIgnored(noent)
 
-						var rm RingMangerUint[uint8] = RingMangerUintNew(mh, mt, root)
+						var rm RingManagerUint[uint8] = RingManagerUintNew(mh, mt, root)
 
-						t.Run("manager got", func(mng RingMangerUint[uint8]) func(*testing.T) {
+						t.Run("manager got", func(mng RingManagerUint[uint8]) func(*testing.T) {
 							return func(t *testing.T) {
 								t.Parallel()
 

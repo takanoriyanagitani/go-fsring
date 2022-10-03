@@ -100,7 +100,7 @@ func TestApp(t *testing.T) {
 					var mh ManagerUint[uint8] = hb.BuildManager().NoentIgnored(noent)
 					var mt ManagerUint[uint8] = tb.BuildManager().NoentIgnored(noent)
 
-					var rm RingMangerUint[uint8] = RingMangerUintNew(mh, mt, root)
+					var rm RingManagerUint[uint8] = RingManagerUintNew(mh, mt, root)
 
 					rhb, e := WriteRequestHandlerBuilderUintNew(
 						rm,

@@ -200,47 +200,47 @@ func (m ManagerUint[T]) NoentIgnored(f func() (T, error)) ManagerUint[T] {
 
 func (m ManagerUint[T]) Get() (T, error) { return m.get() }
 
-type RingMangerUint[T uint8 | uint16] struct {
+type RingManagerUint[T uint8 | uint16] struct {
 	head ManagerUint[T]
 	tail ManagerUint[T]
 	dir  string
 }
 
-func RingMangerUintNew[T uint8 | uint16](
+func RingManagerUintNew[T uint8 | uint16](
 	head ManagerUint[T],
 	tail ManagerUint[T],
 	dir string,
-) RingMangerUint[T] {
-	return RingMangerUint[T]{
+) RingManagerUint[T] {
+	return RingManagerUint[T]{
 		head,
 		tail,
 		dir,
 	}
 }
 
-func (r RingMangerUint[T]) next() (T, error) {
+func (r RingManagerUint[T]) next() (T, error) {
 	return ComposeErr(
 		func(m ManagerUint[T]) (T, error) { return m.get() },
 		func(t T) (T, error) { return t + 1, nil },
 	)(r.tail)
 }
 
-func (r RingMangerUint[T]) nextName(u2h uint2hex[T]) (string, error) {
+func (r RingManagerUint[T]) nextName(u2h uint2hex[T]) (string, error) {
 	return ComposeErr(
-		IgnoreArg[RingMangerUint[T]](r.next), // () => T, error
+		IgnoreArg[RingManagerUint[T]](r.next), // () => T, error
 		ErrFuncGen(u2h),                      // T -> string, error
 	)(r)
 }
 
-func (r RingMangerUint[T]) nextPath(u2h uint2hex[T]) (string, error) {
+func (r RingManagerUint[T]) nextPath(u2h uint2hex[T]) (string, error) {
 	name, e := r.nextName(u2h)
 	return filepath.Join(r.dir, name), e
 }
 
-func (r RingMangerUint[T]) updateHead(neo T) error { return r.head.set(neo) }
-func (r RingMangerUint[T]) updateTail(neo T) error { return r.tail.set(neo) }
+func (r RingManagerUint[T]) updateHead(neo T) error { return r.head.set(neo) }
+func (r RingManagerUint[T]) updateTail(neo T) error { return r.tail.set(neo) }
 
-func (r RingMangerUint[T]) UpdateTail(h2u hex2uint[T], neo string) error {
+func (r RingManagerUint[T]) UpdateTail(h2u hex2uint[T], neo string) error {
 	var f func(string) (T, error) = ComposeErr(
 		h2u, // string -> T, error
 		func(t T) (T, error) { return t, r.updateTail(t) },
@@ -248,7 +248,7 @@ func (r RingMangerUint[T]) UpdateTail(h2u hex2uint[T], neo string) error {
 	return ErrOnly(f)(neo)
 }
 
-func (r RingMangerUint[T]) UpdateHead(h2u hex2uint[T], neo string) error {
+func (r RingManagerUint[T]) UpdateHead(h2u hex2uint[T], neo string) error {
 	var f func(string) (T, error) = ComposeErr(
 		h2u, // string -> T, error
 		func(t T) (T, error) { return t, r.updateHead(t) },
@@ -256,24 +256,24 @@ func (r RingMangerUint[T]) UpdateHead(h2u hex2uint[T], neo string) error {
 	return ErrOnly(f)(neo)
 }
 
-func (r RingMangerUint[T]) Head() (T, error) {
+func (r RingManagerUint[T]) Head() (T, error) {
 	var h ManagerUint[T] = r.head
 	return h.Get()
 }
 
-func (r RingMangerUint[T]) Tail() (T, error) {
+func (r RingManagerUint[T]) Tail() (T, error) {
 	var t ManagerUint[T] = r.tail
 	return t.Get()
 }
 
-func (r RingMangerUint[T]) count(counter HeadTailCounter[T]) (T, error) {
+func (r RingManagerUint[T]) count(counter HeadTailCounter[T]) (T, error) {
 	h2ht := func(head T) (ht [2]T, e error) {
 		tail, e := r.Tail()
 		ht[0] = head
 		ht[1] = tail
 		return
 	}
-	r2h := func(m RingMangerUint[T]) (T, error) { return m.Head() }
+	r2h := func(m RingManagerUint[T]) (T, error) { return m.Head() }
 	r2ht := ComposeErr(
 		r2h,
 		h2ht,
@@ -290,15 +290,15 @@ func (r RingMangerUint[T]) count(counter HeadTailCounter[T]) (T, error) {
 	return r2diff(r)
 }
 
-func (r RingMangerUint[T]) count2names(cnt int) (names Iter[T], e error) {
+func (r RingManagerUint[T]) count2names(cnt int) (names Iter[T], e error) {
 	var lbi2names func(lbi T) Iter[T] = Curry(count2listUint[T])(cnt)
 	return ComposeErr(
-		func(_ RingMangerUint[T]) (T, error) { return r.Head() },
+		func(_ RingManagerUint[T]) (T, error) { return r.Head() },
 		ErrFuncGen(lbi2names),
 	)(r)
 }
 
-func (r RingMangerUint[T]) Names(counter HeadTailCounter[T]) (names Iter[T], e error) {
+func (r RingManagerUint[T]) Names(counter HeadTailCounter[T]) (names Iter[T], e error) {
 	var counter2count func(HeadTailCounter[T]) (int, error) = ComposeErr(
 		r.count,
 		func(cnt T) (int, error) { return int(cnt) + 1, nil },
@@ -309,7 +309,7 @@ func (r RingMangerUint[T]) Names(counter HeadTailCounter[T]) (names Iter[T], e e
 	)(counter)
 }
 
-func (r RingMangerUint[T]) NewList(counter HeadTailCounter[T]) ListUint[T] {
+func (r RingManagerUint[T]) NewList(counter HeadTailCounter[T]) ListUint[T] {
 	return func() (names Iter[T], e error) {
 		return r.Names(counter)
 	}
