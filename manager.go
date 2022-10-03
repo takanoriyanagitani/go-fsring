@@ -228,7 +228,7 @@ func (r RingManagerUint[T]) next() (T, error) {
 func (r RingManagerUint[T]) nextName(u2h uint2hex[T]) (string, error) {
 	return ComposeErr(
 		IgnoreArg[RingManagerUint[T]](r.next), // () => T, error
-		ErrFuncGen(u2h),                      // T -> string, error
+		ErrFuncGen(u2h),                       // T -> string, error
 	)(r)
 }
 
