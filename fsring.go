@@ -160,7 +160,10 @@ func (s RingService[T]) Write(req WriteRequest) ServiceEvent {
 }
 
 func (s RingService[T]) Del(req DeleteRequest[T]) ServiceEvent {
-	evt, e := s.drh(req)
+	evt, e := ComposeErr(
+		s.drh, // DeleteRequest[T] -> RemovedEvent[T], error
+		func(evt RemovedEvent[T]) (RemovedEvent[T], error) { return evt, s.reh(evt) },
+	)(req)
 	return evt.ToServiceEvent(e)
 }
 

@@ -99,7 +99,10 @@ func SetUintFsBuilder[T uint8 | uint16](w2s func(io.Writer) SetUint[T]) SetUintF
 	return func(chk NameChecker) func(string) SetUint[T] {
 		return func(filename string) SetUint[T] {
 			return func(neo T) error {
-				f, e := os.Create(chk(filename))
+				f, e := ComposeErr(
+					func(d string) (string, error) { return filename, os.MkdirAll(chk(d), 0750) },
+					func(name string) (*os.File, error) { return os.Create(chk(name)) },
+				)(filepath.Dir(filename))
 				if nil != e {
 					return e
 				}

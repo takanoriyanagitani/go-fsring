@@ -17,6 +17,7 @@ func TestApp(t *testing.T) {
 	}
 
 	t.Run("HandleWriteRequest", func(t *testing.T) {
+		t.Skip("deprecated")
 		t.Parallel()
 
 		var root string = filepath.Join(ITEST_FSRING_DIR, "App/HandleWriteRequest")
