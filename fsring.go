@@ -21,6 +21,7 @@ type RingService[T any] struct {
 	lrht  ListRequestHandler[T]
 	drh   DeleteHandler[T]
 	rh    ReadHandler[T]
+	reh   RemovedEventHandler[T]
 }
 
 type ServiceEvent struct {
@@ -78,6 +79,7 @@ type RingServiceFactory[T any] struct {
 	ListRequestHandler[T]
 	DeleteHandler[T]
 	ReadHandler[T]
+	RemovedEventHandler[T]
 }
 
 func (f RingServiceFactory[T]) WithWriteHandler(h WriteRequestHandler) RingServiceFactory[T] {
@@ -105,6 +107,11 @@ func (f RingServiceFactory[T]) WithReadHandler(h ReadHandler[T]) RingServiceFact
 	return f
 }
 
+func (f RingServiceFactory[T]) WithRemovedHandler(h RemovedEventHandler[T]) RingServiceFactory[T] {
+	f.RemovedEventHandler = h
+	return f
+}
+
 func (f RingServiceFactory[T]) Build() (RingService[T], error) {
 	var valid bool = IterFromArr([]bool{
 		nil != f.WriteRequestHandler,
@@ -112,6 +119,7 @@ func (f RingServiceFactory[T]) Build() (RingService[T], error) {
 		nil != f.ListRequestHandler,
 		nil != f.DeleteHandler,
 		nil != f.ReadHandler,
+		nil != f.RemovedEventHandler,
 	}).All(Identity[bool])
 	return ErrFromBool(
 		valid,
@@ -122,6 +130,7 @@ func (f RingServiceFactory[T]) Build() (RingService[T], error) {
 				lrht:  f.ListRequestHandler,
 				drh:   f.DeleteHandler,
 				rh:    f.ReadHandler,
+				reh:   f.RemovedEventHandler,
 			}
 		},
 		func() error { return fmt.Errorf("Invalid factory") },

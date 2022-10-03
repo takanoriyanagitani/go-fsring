@@ -125,12 +125,22 @@ func TestAll(t *testing.T) {
 				NoentIgnored().
 				NewHandler()
 
+			rehbu, e := RemovedEventHandlerBuilderUintNew(
+				hex2uint3,
+				uint2hex3,
+				rmu,
+			)
+			mustNil(e)
+
+			var reh RemovedEventHandler[uint8] = rehbu.NewHandler()
+
 			var rsf RingServiceFactory[uint8] = RingServiceFactory[uint8]{}.
 				WithWriteHandler(wrh).
 				WithWroteHandler(weh).
 				WithListHandler(lh).
 				WithDeleteHandler(dh).
-				WithReadHandler(rh)
+				WithReadHandler(rh).
+				WithRemovedHandler(reh)
 
 			rs, e := rsf.Build()
 			mustNil(e)

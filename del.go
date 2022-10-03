@@ -2,6 +2,7 @@ package fsring
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -43,6 +44,24 @@ func (b RemovedEventHandlerBuilderUint[T]) Removed(evt RemovedEvent[T]) error {
 	return b.removed(s)
 }
 func (b RemovedEventHandlerBuilderUint[T]) NewHandler() RemovedEventHandler[T] { return b.Removed }
+
+func RemovedEventHandlerBuilderUintNew[T uint8 | uint16](
+	h2u hex2uint[T],
+	u2h uint2hex[T],
+	mng RingManagerUint[T],
+) (RemovedEventHandlerBuilderUint[T], error) {
+	return ErrFromBool(
+		nil != h2u && nil != u2h,
+		func() RemovedEventHandlerBuilderUint[T] {
+			return RemovedEventHandlerBuilderUint[T]{
+				h2u,
+				u2h,
+				mng,
+			}
+		},
+		func() error { return fmt.Errorf("Invalid arguments") },
+	)
+}
 
 type DeleteHandler[T any] func(DeleteRequest[T]) (RemovedEvent[T], error)
 
