@@ -13,6 +13,8 @@ type ReadByUint[T uint8 | uint16] func(key T) (data []byte, e error)
 
 type ReadRequest[T any] struct{ target T }
 
+func (r ReadRequest[T]) Target() T { return r.target }
+
 func ReadRequestNew[T any](target T) ReadRequest[T] { return ReadRequest[T]{target} }
 
 type ReadEvent struct{ data []byte }

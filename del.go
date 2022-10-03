@@ -14,11 +14,11 @@ type DeleteRequest[T any] struct{ target T }
 
 func DeleteRequestNew[T any](target T) DeleteRequest[T] { return DeleteRequest[T]{target} }
 
-type RemovedEvent struct{}
+type RemovedEvent[T any] struct{ target T }
 
-func (r RemovedEvent) WriteTo(_ io.Writer) (int64, error) { return 0, nil }
+func (r RemovedEvent[T]) WriteTo(_ io.Writer) (int64, error) { return 0, nil }
 
-func (r RemovedEvent) ToServiceEvent(e error) ServiceEvent {
+func (r RemovedEvent[T]) ToServiceEvent(e error) ServiceEvent {
 	return OptUnwrapOrElse(
 		func() (evt ServiceEvent, hasValue bool) {
 			return OptFromBool(nil == e, Partial(ServiceEventOk, nil))
@@ -27,17 +27,34 @@ func (r RemovedEvent) ToServiceEvent(e error) ServiceEvent {
 	)()
 }
 
-type DeleteHandler[T any] func(DeleteRequest[T]) (RemovedEvent, error)
+type RemovedEventHandler[T any] func(RemovedEvent[T]) error
+
+type RemovedEventHandlerBuilderUint[T uint8 | uint16] struct {
+	h2u hex2uint[T]
+	u2h uint2hex[T]
+	mng RingManagerUint[T]
+}
+
+func (b RemovedEventHandlerBuilderUint[T]) removed(removedName string) error {
+	return b.mng.UpdateHead(b.h2u, filepath.Base(removedName))
+}
+func (b RemovedEventHandlerBuilderUint[T]) Removed(evt RemovedEvent[T]) error {
+	var s string = b.u2h(evt.target)
+	return b.removed(s)
+}
+func (b RemovedEventHandlerBuilderUint[T]) NewHandler() RemovedEventHandler[T] { return b.Removed }
+
+type DeleteHandler[T any] func(DeleteRequest[T]) (RemovedEvent[T], error)
 
 func (d DeleteUint[T]) errIgnored(check func(error) (ignore bool)) DeleteUint[T] {
 	return ErrIgnored(d, check)
 }
 
 func (d DeleteUint[T]) NewHandler() DeleteHandler[T] {
-	return func(req DeleteRequest[T]) (RemovedEvent, error) {
+	return func(req DeleteRequest[T]) (RemovedEvent[T], error) {
 		var tgt T = req.target
 		var e error = d(tgt)
-		return RemovedEvent{}, e
+		return RemovedEvent[T]{target: tgt}, e
 	}
 }
 
