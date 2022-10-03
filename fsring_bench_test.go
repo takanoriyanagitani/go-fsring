@@ -85,12 +85,22 @@ func BenchmarkAll(b *testing.B) {
 			NoentIgnored().
 			NewHandler()
 
+		rehbu, e := RemovedEventHandlerBuilderUintNew(
+			hex2uint3,
+			uint2hex3,
+			rmu,
+		)
+		mustNil(e)
+
+		var reh = rehbu.NewHandler()
+
 		var rsf RingServiceFactory[uint8] = RingServiceFactory[uint8]{}.
 			WithWriteHandler(wrh).
 			WithWroteHandler(weh).
 			WithListHandler(lh).
 			WithDeleteHandler(dh).
-			WithReadHandler(rh)
+			WithReadHandler(rh).
+			WithRemovedHandler(reh)
 
 		rs, e := rsf.Build()
 		mustNil(e)
@@ -195,6 +205,7 @@ func BenchmarkAll(b *testing.B) {
 
 				b.Run("8 KiB", chk(8192, 10*time.Millisecond))
 				b.Run("80 KiB", chk(81920, 100*time.Millisecond))
+				b.Run("800 KiB", chk(819200, 1000*time.Millisecond))
 
 			}
 		}(rs))
