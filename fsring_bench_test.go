@@ -53,7 +53,11 @@ func BenchmarkAll(b *testing.B) {
 		var hmu ManagerUint[uint8] = hmbf.BuildManager().NoentIgnored(noent0).Fallback(0)
 		var tmu ManagerUint[uint8] = tmbf.BuildManager().NoentIgnored(noent0).Fallback(255)
 
-		var rmu RingManagerUint[uint8] = RingManagerUintNew(hmu, tmu, root)
+		var rmu RingManagerUint[uint8] = RingManagerUintNew(hmu, tmu, root).
+			Refresh(
+				ManagerUintMemNew[uint8](0),
+				ManagerUintMemNew[uint8](255),
+			)
 
 		var wb WriteBuilder = WriteBuilder{}.
 			Default().
