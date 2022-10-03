@@ -247,6 +247,12 @@ func (r RingManagerUint[T]) nextPath(u2h uint2hex[T]) (string, error) {
 func (r RingManagerUint[T]) updateHead(neo T) error { return r.head.set(neo) }
 func (r RingManagerUint[T]) updateTail(neo T) error { return r.tail.set(neo) }
 
+func (r RingManagerUint[T]) Refresh(head, tail ManagerUint[T]) RingManagerUint[T] {
+	r.head = head
+	r.tail = tail
+	return r
+}
+
 func (r RingManagerUint[T]) UpdateTail(h2u hex2uint[T], neo string) error {
 	var f func(string) (T, error) = ComposeErr(
 		h2u, // string -> T, error
