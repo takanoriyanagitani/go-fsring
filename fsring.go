@@ -1,6 +1,7 @@
 package fsring
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -137,7 +138,16 @@ func (s RingService[T]) Write(req WriteRequest) ServiceEvent {
 		s.wreqh,
 		func(evt WroteEvent) (WroteEvent, error) { return evt, s.wevth(evt) },
 	)
-	return ServiceEventNew(nil, ErrOnly(f)(req))
+	e := ErrOnly(f)(req)
+	return OptUnwrapOrElse(
+		func() (evt ServiceEvent, hasValue bool) {
+			return OptFromBool(
+				errors.Is(e, ErrNonEmpty),
+				func() ServiceEvent { return ServiceEventNg(e).WithStatus(StatusTooMany) },
+			)
+		},
+		func() ServiceEvent { return ServiceEventNew(nil, e) },
+	)()
 }
 
 func (s RingService[T]) Del(req DeleteRequest[T]) ServiceEvent {

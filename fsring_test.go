@@ -91,9 +91,12 @@ func TestAll(t *testing.T) {
 			wtr, e := wb.BuildNoRename()
 			mustNil(e)
 
+			var ie IsEmpty = IsEmptyBuilderNew(chk)
+			var w2empty Write = wtr.RejectNonEmpty(ie)
+
 			var u2h uint2hex[uint8] = uint2hex3
 
-			wrhbu, e := WriteRequestHandlerBuilderUintNew(rmu, wtr, u2h)
+			wrhbu, e := WriteRequestHandlerBuilderUintNew(rmu, w2empty, u2h)
 			mustNil(e)
 			var wrh WriteRequestHandler = wrhbu.NewHandler()
 
@@ -165,6 +168,14 @@ func TestAll(t *testing.T) {
 						t.Run("Must not fail", check(nil == evt.Err(), true))
 					})
 
+					t.Run("Invalid request", func(t *testing.T) {
+						t.Parallel()
+
+						var evt ServiceEvent = svc.Handle(nil, lewt)
+
+						t.Run("Must fail", check(nil != evt.Err(), true))
+					})
+
 					t.Run("Story", func(t *testing.T) {
 						t.Parallel()
 
@@ -202,6 +213,23 @@ func TestAll(t *testing.T) {
 						t.Run("Must not fail(read)", check(nil == evt.Err(), true))
 						t.Run("Must be ok(read)", check(evt.Status(), StatusOk))
 						t.Run("Must be same(read)", checkBytes(evt.Body(), []byte("hw")))
+
+						var wrequests Iter[WriteRequest] = IterMap(
+							IterInts(0, 1024), func(_ int) WriteRequest {
+								return WriteRequestNew(nil)
+							},
+						)
+						var wevents []ServiceEvent = IterMap(
+							wrequests, func(q WriteRequest) ServiceEvent {
+								return svc.Handle(q, lewt)
+							},
+						).
+							Filter(func(evt ServiceEvent) bool { return nil != evt.Err() }).
+							ToArray()
+						t.Run("Must fail(too many)", check(0 < len(wevents), true))
+						var wfail ServiceEvent = wevents[0]
+						t.Run("Must be empty(too many)", check(len(wfail.Body()), 0))
+						t.Run("Must be same(too many)", check(wfail.Status(), StatusTooMany))
 					})
 				}
 			}(rs))
