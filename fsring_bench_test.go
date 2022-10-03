@@ -95,11 +95,7 @@ func BenchmarkAll(b *testing.B) {
 			NoentIgnored().
 			NewHandler()
 
-		rehbu, e := RemovedEventHandlerBuilderUintNew(
-			hex2uint3,
-			uint2hex3,
-			rmu,
-		)
+		rehbu, e := RemovedEventHandlerBuilderUint3New(rmu)
 		mustNil(e)
 
 		var reh = rehbu.NewHandler()

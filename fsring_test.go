@@ -62,6 +62,8 @@ func TestAll(t *testing.T) {
 
 			e := os.RemoveAll(root)
 			mustNil(e)
+			e = os.MkdirAll(root, 0755)
+			mustNil(e)
 
 			var guf GetUintFs[uint8] = GetUintFsBuilderTxtHex3
 			var suf SetUintFs[uint8] = SetUintFsTxtHex3
@@ -69,6 +71,11 @@ func TestAll(t *testing.T) {
 
 			var hname string = filepath.Join(root, "head.txt")
 			var tname string = filepath.Join(root, "tail.txt")
+
+			e = os.WriteFile(hname, nil, 0644)
+			mustNil(e)
+			e = os.WriteFile(tname, nil, 0644)
+			mustNil(e)
 
 			var mbf ManagerBuilderFactoryFs[uint8] = ManagerBuilderFactoryFs[uint8]{}.
 				WithGet(guf).
@@ -82,12 +89,14 @@ func TestAll(t *testing.T) {
 
 			noent0 := func() (uint8, error) { return 0, nil }
 
-			var hmu ManagerUint[uint8] = hmbf.BuildManager().NoentIgnored(noent0)
-			var tmu ManagerUint[uint8] = tmbf.BuildManager().NoentIgnored(noent0)
+			var hmu ManagerUint[uint8] = hmbf.BuildManager().NoentIgnored(noent0).Fallback(0)
+			var tmu ManagerUint[uint8] = tmbf.BuildManager().NoentIgnored(noent0).Fallback(255)
 
 			var rmu RingManagerUint[uint8] = RingManagerUintNew(hmu, tmu, root)
 
-			var wb WriteBuilder = WriteBuilder{}.Default()
+			var wb WriteBuilder = WriteBuilder{}.
+				Default().
+				WithFileSync(FileSyncData)
 			wtr, e := wb.BuildNoRename()
 			mustNil(e)
 
@@ -125,11 +134,7 @@ func TestAll(t *testing.T) {
 				NoentIgnored().
 				NewHandler()
 
-			rehbu, e := RemovedEventHandlerBuilderUintNew(
-				hex2uint3,
-				uint2hex3,
-				rmu,
-			)
+			rehbu, e := RemovedEventHandlerBuilderUint3New(rmu)
 			mustNil(e)
 
 			var reh RemovedEventHandler[uint8] = rehbu.NewHandler()

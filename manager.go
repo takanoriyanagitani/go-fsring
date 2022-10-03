@@ -12,14 +12,6 @@ import (
 type GetUint[T uint8 | uint16] func() (T, error)
 type SetUint[T uint8 | uint16] func(neo T) error
 
-func (g GetUint[T]) OrElse(f func(error) (T, error)) (T, error) {
-	t, e := g()
-	if nil != e {
-		return f(e)
-	}
-	return t, nil
-}
-
 func (g GetUint[T]) IgnoreNoent(f func() (T, error)) (T, error) {
 	t, e := g()
 	if nil != e {
