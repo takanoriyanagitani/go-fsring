@@ -51,17 +51,17 @@ func BenchmarkAll(b *testing.B) {
 						ctx, cancel := context.WithCancel(context.Background())
 						defer cancel()
 
-						var lock sync.Mutex
+						var lock sync.RWMutex
 
 						getList := func(req ListRequest) ServiceEvent {
-							lock.Lock()
-							defer lock.Unlock()
+							lock.RLock()
+							defer lock.RUnlock()
 							return svc.Handle(req, lewt)
 						}
 
 						getBody := func(req ReadRequest[uint8]) ServiceEvent {
-							lock.Lock()
-							defer lock.Unlock()
+							lock.RLock()
+							defer lock.RUnlock()
 							return svc.Handle(req, lewt)
 						}
 
