@@ -82,6 +82,61 @@ type RingServiceFactory[T any] struct {
 	RemovedEventHandler[T]
 }
 
+func RingServiceFactoryMemDefault3(wtr Write) func(dir string) RingServiceFactory[uint8] {
+	return func(dir string) RingServiceFactory[uint8] {
+		var hmu ManagerUint[uint8] = ManagerUintMemNew[uint8](0)
+		var tmu ManagerUint[uint8] = ManagerUintMemNew[uint8](255)
+		var rmu RingManagerUint[uint8] = RingManagerUintNew(hmu, tmu, dir)
+
+		wrhbu, e := WriteRequestHandlerBuilderUintNew(rmu, wtr, uint2hex3)
+		var wrh WriteRequestHandler = OptUnwrapOrDefault(
+			func() (WriteRequestHandler, bool) {
+				return OptFromBool(
+					nil == e,
+					wrhbu.NewHandler,
+				)
+			},
+		)()
+
+		wehbu, e := WroteEventHandlerBuilderUintNew3(rmu)
+		var weh WroteEventHandler = OptUnwrapOrDefault(
+			func() (WroteEventHandler, bool) {
+				return OptFromBool(
+					nil == e,
+					wehbu.NewHandler,
+				)
+			},
+		)()
+
+		var lh ListRequestHandler[uint8] = ListUintFallbackNew3.NewHandler()
+
+		var nbu NameBuilderUint[uint8] = NameBuilderUint3(dir)
+		var chk NameChecker = NameCheckerNoCheck
+
+		var dh DeleteHandler[uint8] = DeleteUintBuilder(nbu)(chk).NoentIgnored().NewHandler()
+
+		var rh ReadHandler[uint8] = ReadByUintBuilder(nbu)(chk).NoentIgnored().NewHandler()
+
+		rehbu, e := RemovedEventHandlerBuilderUint3New(rmu)
+		var reh RemovedEventHandler[uint8] = OptUnwrapOrDefault(
+			func() (RemovedEventHandler[uint8], bool) {
+				return OptFromBool(
+					nil == e,
+					rehbu.NewHandler,
+				)
+			},
+		)()
+
+		return RingServiceFactory[uint8]{}.
+			WithWriteHandler(wrh).
+			WithWroteHandler(weh).
+			WithListHandler(lh).
+			WithDeleteHandler(dh).
+			WithReadHandler(rh).
+			WithRemovedHandler(reh)
+	}
+}
+
 func (f RingServiceFactory[T]) WithWriteHandler(h WriteRequestHandler) RingServiceFactory[T] {
 	f.WriteRequestHandler = h
 	return f

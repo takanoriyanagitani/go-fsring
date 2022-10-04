@@ -22,96 +22,11 @@ func BenchmarkAll(b *testing.B) {
 
 		e := os.RemoveAll(root)
 		mustNil(e)
-
-		var guf GetUintFs[uint8] = GetUintFsBuilderTxtHex3
-		var suf SetUintFs[uint8] = SetUintFsTxtHex3
-		var chk NameChecker = NameCheckerNoCheck
-
-		var hname string = filepath.Join(root, "head.txt")
-		var tname string = filepath.Join(root, "tail.txt")
-
-		e = os.MkdirAll(filepath.Dir(hname), 0755)
+		e = os.MkdirAll(root, 0755)
 		mustNil(e)
 
-		e = os.WriteFile(hname, nil, 0644)
-		mustNil(e)
-		e = os.WriteFile(tname, nil, 0644)
-		mustNil(e)
-
-		var mbf ManagerBuilderFactoryFs[uint8] = ManagerBuilderFactoryFs[uint8]{}.
-			WithGet(guf).
-			WithSet(suf).
-			WithCheck(chk)
-
-		hmbf, e := mbf.WithName(hname).Build()
-		mustNil(e)
-		tmbf, e := mbf.WithName(tname).Build()
-		mustNil(e)
-
-		noent0 := func() (uint8, error) { return 0, nil }
-
-		var hmu ManagerUint[uint8] = hmbf.BuildManager().NoentIgnored(noent0).Fallback(0)
-		var tmu ManagerUint[uint8] = tmbf.BuildManager().NoentIgnored(noent0).Fallback(255)
-
-		var rmu RingManagerUint[uint8] = RingManagerUintNew(hmu, tmu, root).
-			Refresh(
-				ManagerUintMemNew[uint8](0),
-				ManagerUintMemNew[uint8](255),
-			)
-
-		var wb WriteBuilder = WriteBuilder{}.
-			Default().
-			WithFileSync(FileSyncData)
-		wtr, e := wb.BuildNoRename()
-		mustNil(e)
-
-		var ie IsEmpty = IsEmptyBuilderNew(chk)
-		var w2empty Write = wtr.RejectNonEmpty(ie)
-
-		var u2h uint2hex[uint8] = uint2hex3
-
-		wrhbu, e := WriteRequestHandlerBuilderUintNew(rmu, w2empty, u2h)
-		mustNil(e)
-		var wrh WriteRequestHandler = wrhbu.NewHandler()
-
-		var h2u hex2uint[uint8] = hex2uint3
-
-		wehbu, e := WroteEventHandlerBuilderUintNew(h2u, rmu)
-		mustNil(e)
-		var weh WroteEventHandler = wehbu.NewHandler()
-
-		var htc HeadTailCounter[uint8] = HeadTailCounter3
-
-		var lf ListUint[uint8] = ListUintFallbackNew3
-		var lu ListUint[uint8] = rmu.NewList(htc).Fallback(lf)
-
-		var lh ListRequestHandler[uint8] = lu.NewHandler()
-
-		var nbu NameBuilderUint[uint8] = NameBuilderUint3(root)
-
-		var du DeleteUint[uint8] = DeleteUintBuilder(nbu)(chk)
-		var dh DeleteHandler[uint8] = du.
-			NoentIgnored().
-			NewHandler()
-
-		var rbu ReadByUint[uint8] = ReadByUintBuilder(nbu)(chk)
-		var rh ReadHandler[uint8] = rbu.
-			NoentIgnored().
-			NewHandler()
-
-		rehbu, e := RemovedEventHandlerBuilderUint3New(rmu)
-		mustNil(e)
-
-		var reh = rehbu.NewHandler()
-
-		var rsf RingServiceFactory[uint8] = RingServiceFactory[uint8]{}.
-			WithWriteHandler(wrh).
-			WithWroteHandler(weh).
-			WithListHandler(lh).
-			WithDeleteHandler(dh).
-			WithReadHandler(rh).
-			WithRemovedHandler(reh)
-
+		var wtr Write = WriteNocheckFdatasync
+		var rsf RingServiceFactory[uint8] = RingServiceFactoryMemDefault3(wtr)(root)
 		rs, e := rsf.Build()
 		mustNil(e)
 

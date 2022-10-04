@@ -267,14 +267,6 @@ func TestAll(t *testing.T) {
 
 			var chk NameChecker = NameCheckerNoCheck
 
-			var hname string = filepath.Join(root, "head.txt")
-			var tname string = filepath.Join(root, "tail.txt")
-
-			e = os.WriteFile(hname, nil, 0644)
-			mustNil(e)
-			e = os.WriteFile(tname, nil, 0644)
-			mustNil(e)
-
 			var hmu ManagerUint[uint8] = ManagerUintMemNew[uint8](0)
 			var tmu ManagerUint[uint8] = ManagerUintMemNew[uint8](255)
 
@@ -286,6 +278,7 @@ func TestAll(t *testing.T) {
 
 			var wb WriteBuilder = WriteBuilder{}.
 				Default().
+				WithNameChecker(chk).
 				WithFileSync(FileSyncData)
 			wtr, e := wb.BuildNoRename()
 			mustNil(e)
@@ -299,9 +292,7 @@ func TestAll(t *testing.T) {
 			mustNil(e)
 			var wrh WriteRequestHandler = wrhbu.NewHandler()
 
-			var h2u hex2uint[uint8] = hex2uint3
-
-			wehbu, e := WroteEventHandlerBuilderUintNew(h2u, rmu)
+			wehbu, e := WroteEventHandlerBuilderUintNew3(rmu)
 			mustNil(e)
 			var weh WroteEventHandler = wehbu.NewHandler()
 
@@ -435,6 +426,64 @@ func TestAll(t *testing.T) {
 						var wfail ServiceEvent = wevents[0]
 						t.Run("Must be empty(too many)", check(len(wfail.Body()), 0))
 						t.Run("Must be same(too many)", check(wfail.Status(), StatusTooMany))
+					})
+				}
+			}(rs))
+		})
+
+		t.Run("shorter init", func(t *testing.T) {
+			t.Parallel()
+
+			var ITEST_FSRING_DIR string = os.Getenv("ITEST_FSRING_DIR")
+			if len(ITEST_FSRING_DIR) < 1 {
+				t.Skip("skipping tests using file system")
+			}
+
+			var root string = filepath.Join(ITEST_FSRING_DIR, "fsring/shorter/init")
+
+			var rsf = RingServiceFactoryMemDefault3(WriteNocheckFdatasync)(root)
+			rs, e := rsf.Build()
+			mustNil(e)
+
+			t.Run("service got", func(svc RingService[uint8]) func(*testing.T) {
+				return func(t *testing.T) {
+					t.Parallel()
+
+					var uw Uint2Writer[uint8] = Uint2WriterHexTxt3.
+						WithSuffix([]byte("\n"))
+					var lewt ListEventWriterTo[uint8] = uw.NewEventWriter()
+
+					const udel uint8 = 0x37
+					const s404 uint8 = 0x44
+
+					t.Run("DeleteRequest", func(t *testing.T) {
+						t.Parallel()
+
+						var dreq DeleteRequest[uint8] = DeleteRequestNew(udel)
+						var evt ServiceEvent = svc.Handle(dreq, lewt)
+
+						t.Run("Must be empty body", check(len(evt.Body()), 0))
+						t.Run("Must be ok", check(evt.Status(), StatusOk))
+						t.Run("Must not fail", check(nil == evt.Err(), true))
+					})
+
+					t.Run("ReadRequest", func(t *testing.T) {
+						t.Parallel()
+
+						var req ReadRequest[uint8] = ReadRequestNew(s404)
+						var evt ServiceEvent = svc.Handle(req, lewt)
+
+						t.Run("Must be empty", check(len(evt.Body()), 0))
+						t.Run("Must be noent", check(evt.Status(), StatusNotFound))
+						t.Run("Must not fail", check(nil == evt.Err(), true))
+					})
+
+					t.Run("Invalid request", func(t *testing.T) {
+						t.Parallel()
+
+						var evt ServiceEvent = svc.Handle(nil, lewt)
+
+						t.Run("Must fail", check(nil != evt.Err(), true))
 					})
 				}
 			}(rs))

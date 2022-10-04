@@ -103,6 +103,11 @@ func (b WriteBuilder) Default() WriteBuilder {
 	return b
 }
 
+func (b WriteBuilder) WithNameChecker(chk NameChecker) WriteBuilder {
+	b.NameChecker = chk
+	return b
+}
+
 func (b WriteBuilder) WithFileSync(s FileSync) WriteBuilder {
 	b.FileSync = s
 	return b
@@ -120,3 +125,16 @@ func (b WriteBuilder) BuildNoRename() (Write, error) {
 		func() error { return fmt.Errorf("Invalid builder") },
 	)
 }
+
+func (b WriteBuilder) BuildNoRenameMust() Write {
+	w, e := b.BuildNoRename()
+	if nil != e {
+		panic(e)
+	}
+	return w
+}
+
+var WriteNocheckFdatasync Write = WriteBuilder{}.
+	Default().
+	WithFileSync(FileSyncData).
+	BuildNoRenameMust()

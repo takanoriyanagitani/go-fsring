@@ -77,3 +77,9 @@ func WroteEventHandlerBuilderUintNew[T uint8 | uint16](
 		func() error { return fmt.Errorf("Invalid arguments") },
 	)
 }
+
+var WroteEventHandlerBuilderUintNew3 func(
+	RingManagerUint[uint8],
+) (WroteEventHandlerBuilderUint[uint8], error) = CurryErr(
+	WroteEventHandlerBuilderUintNew[uint8],
+)(hex2uint3)

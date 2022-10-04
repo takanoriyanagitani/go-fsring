@@ -25,6 +25,8 @@ func IsEmptyBuilderNew(chk NameChecker) IsEmpty {
 	}
 }
 
+var IsEmptyDefault IsEmpty = IsEmptyBuilderNew(NameCheckerNoCheck)
+
 var isEmptyFile func(fs.File) (empty bool, e error) = ComposeErr(
 	func(file fs.File) (fs.FileInfo, error) { return file.Stat() },
 	isEmptyStat,
