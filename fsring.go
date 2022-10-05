@@ -8,10 +8,17 @@ import (
 type ServiceStatus int
 
 const (
+	// Unexpected status
 	StatusUnknown  ServiceStatus = iota
+
+	// No data for specified id
 	StatusNotFound               = iota
+
 	StatusOk                     = iota
+
+	// Out of space
 	StatusTooMany                = iota
+
 	StatusNg                     = iota
 )
 
