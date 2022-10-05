@@ -129,8 +129,18 @@ func BenchmarkAll(b *testing.B) {
 				}
 
 				b.Run("8 KiB", chk(8192, 10*time.Millisecond))
+				b.Run("16 KiB", chk(16384, 100*time.Millisecond))
+				b.Run("40 KiB", chk(41960, 100*time.Millisecond))
 				b.Run("80 KiB", chk(81920, 100*time.Millisecond))
-				b.Run("800 KiB", chk(819200, 1000*time.Millisecond))
+				b.Run("160 KiB", chk(163840, 100*time.Millisecond))
+				b.Run("320 KiB", chk(327680, 100*time.Millisecond))
+				b.Run("512 KB ", chk(512000, 100*time.Millisecond))
+				b.Run("512001B", chk(512001, 100*time.Millisecond))
+				b.Run("512 KiB", chk(524288, 100*time.Millisecond))
+				b.Run("800 KiB", chk(819200, 100*time.Millisecond))
+				b.Run("1024KB ", chk(1024000, 100*time.Millisecond))
+				b.Run("1 MiB  ", chk(1048576, 100*time.Millisecond))
+				b.Run("2 MiB  ", chk(2097152, 100*time.Millisecond))
 
 			}
 		}(rs))
