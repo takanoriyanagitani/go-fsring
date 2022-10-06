@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 )
 
+// DeleteUint removes buffer by target(uint8/uint16).
 type DeleteUint[T uint8 | uint16] func(target T) error
 
 type DeleteRequest[T any] struct{ target T }
@@ -72,6 +73,7 @@ var RemovedEventHandlerBuilderUint4New func(
 	RemovedEventHandlerBuilderUintNew[uint16],
 )(hex2uint4)(uint2hex4)
 
+// DeleteHandler receive and handle delete request(remove buffer).
 type DeleteHandler[T any] func(DeleteRequest[T]) (RemovedEvent[T], error)
 
 func (d DeleteUint[T]) errIgnored(check func(error) (ignore bool)) DeleteUint[T] {
@@ -100,6 +102,7 @@ func truncateBuilder(chk NameChecker) func(fullpath string) error {
 	}
 }
 
+// NameBuilderUint converts key(uint8/uint16) into fullpath(string).
 type NameBuilderUint[T uint8 | uint16] func(t T) (fullpath string)
 
 func NameBuilderUintNew[T uint8 | uint16](u2h uint2hex[T]) func(dirname string) NameBuilderUint[T] {

@@ -9,17 +9,17 @@ type ServiceStatus int
 
 const (
 	// Unexpected status
-	StatusUnknown  ServiceStatus = iota
+	StatusUnknown ServiceStatus = iota
 
 	// No data for specified id
-	StatusNotFound               = iota
+	StatusNotFound = iota
 
-	StatusOk                     = iota
+	StatusOk = iota
 
 	// Out of space
-	StatusTooMany                = iota
+	StatusTooMany = iota
 
-	StatusNg                     = iota
+	StatusNg = iota
 )
 
 type RingService[T any] struct {
