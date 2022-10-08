@@ -9,6 +9,7 @@ import (
 
 type Read func(filename string) (data []byte, e error)
 
+// ReadByUint gets buffer by target key(uint8/uint16).
 type ReadByUint[T uint8 | uint16] func(key T) (data []byte, e error)
 
 type ReadRequest[T any] struct{ target T }
